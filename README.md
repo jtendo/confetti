@@ -10,24 +10,7 @@ The idea:
 2. Assumption: config is Erlang term(s) and application:get_env/2 is rough
 3. Works within multinode cluster; edit config on one node, push it to the
    others, have local backups automatically created on successful reload
-4. Provides shell for management, easily extensible with user-commands
-
-    ❯ telnet localhost 9991
-    Trying 127.0.0.1...
-    Connected to localhost.
-    Escape character is '^]'.
-
-                           ____     __  __  _
-         _________  ____  / __/__  / /_/ /_(_)
-        / ___/ __ \/ __ \/ /_/ _ \/ __/ __/ /
-       / /__/ /_/ / / / / __/  __/ /_/ /_/ /
-       \___/\____/_/ /_/_/  \___/\__/\__/_/
-
-             Type `help` for assistance.
-                Press Ctrl+D to quit.
-
-    (confetti)> 
-
+4. Provides shell for management, easily extensible with user-commands: http://cl.ly/1m1D0P1H322u2Z0k0I03
 5. Works well with Unicode
 6. Write your own in/out hooks for config processing (i.e. have config dumps annotated)
 7. Register as many config providers as you like - no broken config for Mod1 can break Mod2
