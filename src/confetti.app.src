@@ -1,0 +1,18 @@
+{application, confetti,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, [
+    confetti,
+    confetti_mgmt,
+    confetti_client
+    ]},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { confetti_app, []}},
+  {env, [
+        {mgmt_port, 9991}
+    ]}
+ ]}.

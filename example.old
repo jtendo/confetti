@@ -1,0 +1,24 @@
+-module(example_module1).
+-author('adam.rutkowski@jtendo.com').
+-include("confetti.hrl").
+-behaviour(confetti_client).
+-behaviour(gen_event).
+-export[start/0, process_config_in/1, process_config_out/2].
+-export[init/1, handle_event/2].
+
+init([]) ->
+    {ok, []}.
+
+process_config_in(Conf) ->
+    {ok, Conf}.
+
+process_config_out(RawConf, _Conf) ->
+    Commented = "%% This is automatic dump\n" ++ binary_to_list(RawConf),
+    {ok, list_to_binary(Commented)}.
+
+handle_event(Event, State) ->
+    io:format("Handling event ~p~n", [Event]),
+    {ok, State}.
+
+start() ->
+    confetti_client:start(example, "conf", "example.conf", ?MODULE).
