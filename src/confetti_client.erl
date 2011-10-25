@@ -14,23 +14,23 @@ behaviour_info(_) ->
     undefined.
 
 start(ProviderName) ->
-    confetti:start_link(ProviderName, #confetti_opts{
-            filename = string:join([ProviderName, "conf"], ".")
+    confetti_sup:start_child(ProviderName, #confetti_opts{
+            filename = atom_to_list(ProviderName) ++ ".conf"
         }).
 
 start(ProviderName, Filename) ->
-    confetti:start_link(ProviderName, #confetti_opts{
+    confetti_sup:start_child(ProviderName, #confetti_opts{
             filename = Filename
         }).
 
 start(ProviderName, Directory, Filename) ->
-    confetti:start_link(ProviderName, #confetti_opts{
+    confetti_sup:start_child(ProviderName, #confetti_opts{
             filename = Filename,
             directory = Directory
         }).
 
 start(ProviderName, Directory, Filename, CallbackModule) ->
-    confetti:start_link(ProviderName, #confetti_opts{
+    confetti_sup:start_child(ProviderName, #confetti_opts{
             filename = Filename,
             directory = Directory,
             callback_module = CallbackModule

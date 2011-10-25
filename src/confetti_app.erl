@@ -10,7 +10,7 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    confetti_sup:start_link().
+    confetti_sup_sup:start_link().
 
 stop(_State) ->
     ok.

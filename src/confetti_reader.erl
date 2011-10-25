@@ -10,14 +10,14 @@
 
 load_config(Opts = #confetti_opts{}) ->
     File = confetti_utils:fname(Opts),
+    {ok, RawConfig} = file:read_file(File),
     case confetti_utils:u_consult(File) of
         {ok, Terms} ->
             case Opts#confetti_opts.callback_module of
-                undefined -> {ok, Terms};
+                undefined -> {ok, RawConfig, Terms};
                 Module ->
                     case Module:process_config_in(Terms) of
                     {ok, Config} ->
-                        {ok, RawConfig} = file:read_file(File),
                         {ok, RawConfig, Config};
                     {error, Reason} ->
                         handle_error({File, Reason})

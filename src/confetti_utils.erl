@@ -44,13 +44,24 @@ raise_alarm(ProviderName, AlarmDesc) ->
         undefined ->
             io:format("Alarm! Could not start ~p!~n", [ProviderName]);
         {ok, sasl} ->
-            alarm_handler:set_alarm({{confetti, ProviderName}, AlarmDesc})
+            Alarms = alarm_handler:get_alarms(),
+            case proplists:get_value({confetti, ProviderName}, Alarms) of
+                undefined ->
+                    alarm_handler:set_alarm({{confetti, ProviderName}, AlarmDesc});
+                _ ->
+                    ok
+            end
     end.
 
 clear_alarm(ProviderName) ->
     case application:get_application(sasl) of
         {ok, sasl} ->
-            alarm_handler:clear_alarm({confetti, ProviderName});
+            Alarms = alarm_handler:get_alarms(),
+            case proplists:get_value({confetti, ProviderName}, Alarms) of
+                undefined -> ok;
+                _ ->
+                    alarm_handler:clear_alarm({confetti, ProviderName})
+            end;
         _ -> ok
     end.
 

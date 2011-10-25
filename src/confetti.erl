@@ -25,6 +25,8 @@ fetch(ProviderName) ->
     gen_server:call(ProviderName, {fetch_config}).
 
 start_link(ProviderName, Opts = #confetti_opts{}) when is_atom(ProviderName) ->
+    io:format("Starting configuration server ~p with opts ~p~n", [ProviderName,
+            Opts]),
     gen_server:start_link({local, ProviderName}, ?MODULE, {ProviderName, Opts}, []).
 
 %%%===================================================================

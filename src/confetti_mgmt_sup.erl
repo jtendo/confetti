@@ -1,4 +1,3 @@
-%%% The supervisor in charge of all the socket acceptors.
 -module(confetti_mgmt_sup).
 -behaviour(supervisor).
 
@@ -11,7 +10,7 @@ start_link() ->
     {ok, Pid}.
 
 init([]) ->
-    Port = 50000,
+    {ok, Port} = application:get_env(confetti, mgmt_port),
     {ok, ListenSocket} = gen_tcp:listen(Port, [{active,once},
             {reuseaddr, true}]),
     {ok, {{simple_one_for_one, 60, 3600},

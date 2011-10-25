@@ -1,31 +1,19 @@
-
 -module(confetti_sup).
-
 -behaviour(supervisor).
 
-%% API
--export([start_link/0]).
-
-%% Supervisor callbacks
+-export([start_link/0, start_child/2]).
 -export([init/1]).
-
-%% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
-
-%% ===================================================================
-%% API functions
-%% ===================================================================
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% ===================================================================
-%% Supervisor callbacks
-%% ===================================================================
+init(_Args) ->
+    {ok, {{simple_one_for_one, 60, 3600},
+         [{conf_server,
+          {confetti, start_link, []},
+          transient, 1000, worker, [confetti]}
+         ]}}.
 
-init([]) ->
-    Children = [
-        ?CHILD(confetti_mgmt_sup, supervisor)
-    ],
-    {ok, { {one_for_one, 5, 10}, Children} }.
+start_child(ProviderName, Options) ->
+    supervisor:start_child(?MODULE, [ProviderName, Options]).
 
