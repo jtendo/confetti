@@ -15,7 +15,7 @@ behaviour_info(_) ->
 
 start(ProviderName) ->
     confetti:start_link(ProviderName, #confetti_opts{
-            filename = ProviderName ++ ".conf"
+            filename = string:join([ProviderName, "conf"], ".")
         }).
 
 start(ProviderName, Filename) ->

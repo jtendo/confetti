@@ -1,11 +1,3 @@
-%%%-------------------------------------------------------------------
-%%% @author Adam Rutkowski
-%%% @copyright (C) 2011, jtendo/
-%%% @doc
-%%%
-%%% @end
-%%% Created : 2011-07-10 12:57:37.244363
-%%%-------------------------------------------------------------------
 -module(confetti).
 -behaviour(gen_server).
 -include("confetti.hrl").
@@ -32,15 +24,12 @@ reload(ProviderName) ->
 fetch(ProviderName) ->
     gen_server:call(ProviderName, {fetch_config}).
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the server
-%%
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
-%% @end
-%%--------------------------------------------------------------------
 start_link(ProviderName, Opts = #confetti_opts{}) when is_atom(ProviderName) ->
     gen_server:start_link({local, ProviderName}, ?MODULE, {ProviderName, Opts}, []).
+
+%%%===================================================================
+%%% Gen Server Callbacks
+%%%===================================================================
 
 init({ProviderName, Opts}) ->
     case confetti_reader:load_config(Opts) of

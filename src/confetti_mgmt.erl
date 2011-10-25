@@ -1,65 +1,112 @@
 -module(confetti_mgmt).
--author('adam.rutkowski@jtendo.com').
--export([start_link/0, server/0]).
+-behaviour(gen_server).
+-export([start_link/1]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         code_change/3, terminate/2]).
 
--define(PROMPT, <<"(confetti)> ">>).
+-define(SOCK(Msg), {tcp, _Port, Msg}).
+
 -define(HELO,
-<<"
-                       ____     __  __  _
-     _________  ____  / __/__  / /_/ /_(_)
-    / ___/ __ \\/ __ \\/ /_/ _ \\/ __/ __/ /
-   / /__/ /_/ / / / / __/  __/ /_/ /_/ /
-   \\___/\\____/_/ /_/_/  \\___/\\__/\\__/_/
+            fun() ->
+                    {ok, Helo} = file:read_file("priv/helo.txt"),
+                    binary_to_list(Helo)
+            end).
 
-         Type `help` for assistance.
-            Press Ctrl+D to quit.
+-define(PROMPT,
+            fun() ->
+                    io_lib:format("(~w)> ", [node()])
+            end).
 
-(confetti)> ">>).
+-record(state, {socket}). % the current socket
 
-%%%===================================================================
-%%% API
-%%%===================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                          gen_server callbacks                           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start_link() ->
-    Pid = spawn_link(?MODULE, server, []),
-    {ok, Pid}.
+start_link(Socket) ->
+    ok = confetti_mgmt_cmnds:init(),
+    gen_server:start_link(?MODULE, Socket, []).
 
-server() ->
-    {ok, Port} = application:get_env(confetti, mgmt_port),
-    {ok, ListenSocket} = gen_tcp:listen(Port, [binary,
-            {active, true}, {reuseaddr, true}]),
-    wait_connect(ListenSocket).
+init(Socket) ->
+    gen_server:cast(self(), accept),
+    {ok, #state{socket=Socket}}.
 
-%%%===================================================================
-%%% SERVER INTERNALS
-%%%===================================================================
+handle_call(E, _From, State) ->
+    io:format("Handling call ~p~n", [E]),
+    {noreply, State}.
 
-loop() ->
-    receive
-        {tcp, Socket, Quit} when Quit =:= <<4>>; Quit =:= <<"quit\r\n">> -> % Ctrl-d
-            gen_tcp:send(Socket, "\nBye.\n"),
-            gen_tcp:close(Socket),
-            loop();
-        {tcp_closed, _Socket} ->
-            {ok, eot};
-        {tcp, Socket, Bin} ->
-            io:format("Got input ~p~n", [Bin]),
-            Input = binary:replace(Bin, [<<"\n">>, <<"\r">>], <<"">>, [global]),
-            Result = handle_input(Input),
-            gen_tcp:send(Socket, Result),
-            loop()
-    end.
+%% Accepting a connection
+handle_cast(accept, S = #state{socket=ListenSocket}) ->
+    {ok, AcceptSocket} = gen_tcp:accept(ListenSocket),
+    confetti_mgmt_sup:start_socket(),
+    welcome(AcceptSocket),
+    {noreply, S#state{socket=AcceptSocket}};
 
-handle_input(Input) ->
-    io:format("~p~n", [Input]),
-    ?PROMPT.
+handle_cast(Cast, State) ->
+    io:format("Handling cast ~p~n", [Cast]),
+    {noreply, State}.
 
-wait_connect(ListenSocket) ->
-    case gen_tcp:accept(ListenSocket) of
-        {ok, Socket} ->
-            gen_tcp:send(Socket, ?HELO),
-            spawn(fun() -> wait_connect(ListenSocket) end),
-            loop();
-        {error, closed} ->
-            ok
-    end.
+handle_info(?SOCK([4]), S = #state{socket=Socket}) ->
+    send(Socket, "~nBye!", []),
+    {stop, normal, S};
+
+handle_info(?SOCK(E), S = #state{socket=Socket}) ->
+    send(Socket, "~ts", [handle_command(cmd(E))]),
+    prompt(Socket),
+    {noreply, S};
+handle_info({tcp_closed, _}, S) ->
+    {stop, normal, S};
+handle_info(_E,S) ->
+    {noreply, S}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                           management handlers                           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+handle_command([Cmd|Params]) ->
+    io:format("~p params: ~p~n", [Cmd, Params]),
+     try list_to_existing_atom(Cmd) of
+         Func when is_atom(Func) ->
+                    case erlang:function_exported(confetti_mgmt_cmnds, Func, length(Params)) of
+                        true ->
+                            try apply(confetti_mgmt_cmnds, Func, Params) of
+                                Result -> Result
+                                catch Class:Error ->
+                                    io_lib:format("Error: ~p ~p", [Class, Error])
+                            end;
+                        false ->
+                            "Command not supported or parameters arity mismatch. Try: help "++Cmd
+                    end
+                catch _Class:_Error ->
+                    "Unknown command."
+            end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            helper functions                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+prompt(Socket) ->
+    gen_tcp:send(Socket, ?PROMPT()),
+    inet:setopts(Socket, [{active, once}]),
+    ok.
+
+welcome(Socket) ->
+    gen_tcp:send(Socket, ?HELO()),
+    gen_tcp:send(Socket, ?PROMPT()),
+    inet:setopts(Socket, [{active, once}]),
+    ok.
+
+send(Socket, Str, Args) ->
+    gen_tcp:send(Socket, io_lib:format(Str++"~n", Args)),
+    inet:setopts(Socket, [{active, once}]),
+    ok.
+
+cmd(Str) ->
+    string:tokens(hd(string:tokens(Str, "\r\n")), " ").
+
