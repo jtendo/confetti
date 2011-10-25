@@ -3,6 +3,10 @@
 -export([behaviour_info/1, start/1, start/2, start/3, start/4]).
 -include("confetti.hrl").
 
+
+%% FIXME
+%% ideas of client, behavior and api here - they're all stupid/superflous
+
 behaviour_info(callbacks) ->
     [
         {process_config_in, 1},

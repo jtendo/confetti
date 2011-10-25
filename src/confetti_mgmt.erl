@@ -78,7 +78,7 @@ handle_command([Cmd|Params]) ->
                             try apply(confetti_mgmt_cmnds, Func, Params) of
                                 Result -> Result
                                 catch Class:Error ->
-                                    io_lib:format("Error: ~p ~p", [Class, Error])
+                                    io_lib:format("Error (~p): ~p", [Class, Error])
                             end;
                         false ->
                             "Command not supported or parameters arity mismatch. Try: help "++Cmd
