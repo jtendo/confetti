@@ -26,7 +26,8 @@ start_link() ->
 init([]) ->
     Children = [
         ?CHILD(confetti_mgmt_sup, supervisor),
-        ?CHILD(confetti_sup, supervisor)
+        ?CHILD(confetti_sup, supervisor),
+        ?CHILD(confetti_table_man_sup, supervisor)
     ],
     {ok, { {one_for_one, 5, 10}, Children} }.
 
