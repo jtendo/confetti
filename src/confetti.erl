@@ -20,11 +20,8 @@
 %%%===================================================================
 
 start(ProviderName, ClientPid) when is_pid(ClientPid) ->
-    Opts = #confetti_opts{
-        filename = atom_to_list(ProviderName) ++ ".conf"
-    },
+    Opts = {atom_to_list(ProviderName) ++ ".conf", "conf"},
     {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
-    ProviderName = confetti_table_man:create(ProviderName),
     ok = gen_server:call(ProviderName, {subscribe, ProviderName, ClientPid}),
     {ok, Pid};
 
@@ -32,7 +29,7 @@ start(ProviderName, ClientName) when is_atom(ClientName) ->
     start(ProviderName, whereis(ClientName)).
 
 reload(ProviderName) ->
-    case gen_server:call(ProviderName, {reload_config}) of
+    case gen_server:call(ProviderName, {reload_config, ProviderName}) of
         ok -> notify_subscribers(ProviderName, {config_reloaded});
         Err -> Err
     end.
@@ -40,7 +37,7 @@ reload(ProviderName) ->
 fetch(ProviderName) ->
     gen_server:call(ProviderName, {fetch_config}).
 
-start_link(ProviderName, Opts = #confetti_opts{}) when is_atom(ProviderName) ->
+start_link(ProviderName, Opts) when is_atom(ProviderName) ->
     pg2:create(ProviderName),
     gen_server:start_link({local, ProviderName}, ?MODULE, {ProviderName, Opts}, []).
 
@@ -48,24 +45,26 @@ start_link(ProviderName, Opts = #confetti_opts{}) when is_atom(ProviderName) ->
 %%% Gen Server Callbacks
 %%%===================================================================
 
-init({ProviderName, Opts}) ->
-    case confetti_reader:load_config(Opts) of
+init(Subject = {ProviderName, Opts}) ->
+    case confetti_reader:load_config(Subject) of
         {ok, RawConf, Conf} ->
-            confetti_utils:clear_alarm(ProviderName),
             {ok, #provider{opts=Opts, conf=Conf, raw_conf=RawConf}};
         Error ->
-            confetti_utils:raise_alarm(ProviderName, Error),
-            Error
+            case confetti_reader:last_working_config(ProviderName) of
+                {ok, {Opts, PrevRawConf, PrevConf}} ->
+                    {ok, #provider{opts=Opts, conf=PrevConf, raw_conf=PrevRawConf}};
+                _Else -> Error
+            end
     end.
 
-handle_call({reload_config}, _From, State) ->
+handle_call({reload_config, ProviderName}, _From, State) ->
     Opts = State#provider.opts,
-    Conf = State#provider.conf,
-    RawConf = State#provider.raw_conf,
-    case confetti_reader:load_config(Opts) of
+    case confetti_reader:load_config({ProviderName, Opts}) of
         {ok, NewRawConf, NewConf} ->
             NewState = State#provider{raw_conf=NewRawConf, conf=NewConf},
-            confetti_writer:write_config(Opts, Conf, RawConf),
+            Conf = State#provider.conf,
+            RawConf = State#provider.raw_conf,
+            confetti_writer:dump_config(Opts, Conf, RawConf),
             {reply, ok, NewState};
         Error ->
             {reply, Error, State}
@@ -83,6 +82,11 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
+
+%% just for debug purposes
+handle_info(calcbad, State) ->
+    1/0,
+    {noreply, State};
 
 handle_info(_Info, State) ->
     {noreply, State}.

@@ -9,19 +9,16 @@
 %%% API
 %%%===================================================================
 
-fname(normal, Opts = #confetti_opts{}) ->
-    Directory = Opts#confetti_opts.directory,
-    Filename = Opts#confetti_opts.filename,
+fname(normal, {Filename, Directory}) ->
     ConfigFile = filename:join(Directory, Filename),
     ConfigFile;
 
-fname(dump, Opts = #confetti_opts{}) ->
-    Directory = Opts#confetti_opts.directory,
-    Filename = Opts#confetti_opts.filename ++ ".dump",
-    ConfigFile = filename:join(Directory, Filename),
+fname(dump, {Filename, Directory}) ->
+    Marker = "_" ++ f_date(erlang:localtime()) ++ ".dump",
+    ConfigFile = filename:join(Directory, Filename ++ Marker),
     ConfigFile.
 
-fname(Opts = #confetti_opts{}) ->
+fname(Opts = {_, _}) ->
     fname(normal, Opts).
 
 % same as consult, except for encoding flag
@@ -69,6 +66,11 @@ clear_alarm(ProviderName) ->
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
+
+f_date(DateTime) ->
+    {{Year,Month,Day},{Hour,Min,Sec}} = DateTime,
+    io_lib:format("~4.10.0B~2.10.0B~2.10.0B_~2.10.0B_~2.10.0B_~2.10.0B",
+        [Year, Month, Day, Hour, Min, Sec]).
 
 consult_stream(Fd) ->
     consult_stream(Fd, 1, []).

@@ -29,14 +29,18 @@ create(TableName) ->
     gen_server:call(?SERVER, {create, TableName}).
 
 init([]) ->
-    {ok, 1}.
-
-handle_call({create, TableName}, _F, State) ->
-    case ets:info(TableName) of
-        undefined -> ets:new(TableName, [set, public, named_table]);
-        TableData -> TableName
+    case ets:info(confetti) of
+        undefined -> ets:new(confetti, [set, public, named_table]);
+        confetti -> confetti
     end,
-    {reply, TableName, State};
+    {ok, confetti}.
+
+%handle_call({create, TableName}, _F, State) ->
+%    case ets:info(TableName) of
+%        undefined -> ets:new(TableName, [set, public, named_table]);
+%        TableData -> TableName
+%    end,
+%    {reply, TableName, State};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -49,7 +53,7 @@ handle_cast(_Msg, State) ->
 %    io:format("OldOwner dies ~p~n", [OldOwner]),
 %    {noreply, State};
 
-handle_info(Info, State) ->
+handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
