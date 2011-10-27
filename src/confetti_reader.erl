@@ -10,15 +10,19 @@
 
 load_config({ProviderName, Opts = {_, _}}) ->
     File = confetti_utils:fname(Opts),
-    {ok, RawConfig} = file:read_file(File),
-    case confetti_utils:u_consult(File) of
-        {ok, Terms} ->
-            confetti_utils:clear_alarm(ProviderName),
-            confetti_writer:store_working_config(ProviderName, Opts, RawConfig, Terms),
-            {ok, RawConfig, Terms};
-        {error, Reason} ->
-            confetti_utils:raise_alarm(ProviderName, Reason),
-            handle_error({File, Reason})
+    case file:read_file(File) of
+        {ok, RawConfig} ->
+            case confetti_utils:u_consult(File) of
+                {ok, Terms} ->
+                    confetti_utils:clear_alarm(ProviderName),
+                    confetti_writer:store_working_config(ProviderName, Opts, RawConfig, Terms),
+                    {ok, RawConfig, Terms};
+                {error, Reason} ->
+                    confetti_utils:raise_alarm(ProviderName, Reason),
+                    handle_error({File, Reason})
+            end;
+        {error, Err} ->
+            handle_error({File, Err})
     end.
 
 last_working_config(ProviderName) ->
