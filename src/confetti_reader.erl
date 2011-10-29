@@ -42,7 +42,6 @@ validate_config([], ValidTerms) ->
     {ok, ValidTerms};
 
 validate_config([F|Rest], Terms) when is_function(F) ->
-    io:format("Applying ~p to ~p~n", [F, Terms]),
     case apply(F, [Terms]) of
         {ok, ValidTerms} ->
             validate_config(Rest, ValidTerms);

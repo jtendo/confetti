@@ -33,7 +33,6 @@ init(Socket) ->
     {ok, #state{socket=Socket}}.
 
 handle_call(E, _From, State) ->
-    io:format("Handling call ~p~n", [E]),
     {noreply, State}.
 
 %% Accepting a connection
@@ -44,7 +43,6 @@ handle_cast(accept, S = #state{socket=ListenSocket}) ->
     {noreply, S#state{socket=AcceptSocket}};
 
 handle_cast(Cast, State) ->
-    io:format("Handling cast ~p~n", [Cast]),
     {noreply, State}.
 
 handle_info(?SOCK([4]), S = #state{socket=Socket}) ->
@@ -77,7 +75,6 @@ terminate(_Reason, _State) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 handle_command([Cmd|Params]) ->
-    io:format("~p params: ~p~n", [Cmd, Params]),
      try list_to_existing_atom(Cmd) of
          Func when is_atom(Func) ->
                     case erlang:function_exported(confetti_mgmt_cmnds, Func, length(Params)) of
