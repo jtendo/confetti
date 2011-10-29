@@ -18,8 +18,8 @@ fname(dump, {Filename, Directory}) ->
     ConfigFile = filename:join(Directory, Filename ++ Marker),
     ConfigFile.
 
-fname(Opts = {_, _}) ->
-    fname(normal, Opts).
+fname(Location = {_, _}) ->
+    fname(normal, Location).
 
 % same as consult, except for encoding flag
 u_consult(File) ->

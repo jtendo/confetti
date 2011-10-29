@@ -8,15 +8,28 @@
 %%% API
 %%%===================================================================
 
-load_config({ProviderName, Opts = {_, _}}) ->
-    File = confetti_utils:fname(Opts),
+load_config({ProviderName, Opts}) ->
+    File = confetti_utils:fname(proplists:get_value(location, Opts)),
     case file:read_file(File) of
         {ok, RawConfig} ->
             case confetti_utils:u_consult(File) of
                 {ok, Terms} ->
-                    confetti_utils:clear_alarm(ProviderName),
-                    confetti_writer:store_working_config(ProviderName, Opts, RawConfig, Terms),
-                    {ok, RawConfig, Terms};
+
+
+                    case proplists:get_value(validators, Opts, undefined) of
+                        undefined ->
+                            load_valid_config(ProviderName, Opts, RawConfig,
+                                Terms);
+                        Funs when is_list(Funs) ->
+                            case validate_config(Funs, Terms) of
+                                {ok, ValidTerms} ->
+                                    load_valid_config(ProviderName, Opts,
+                                        RawConfig, ValidTerms);
+                                Err ->
+                                    Err
+                            end
+                    end;
+
                 {error, Reason} ->
                     confetti_utils:raise_alarm(ProviderName, Reason),
                     handle_error({File, Reason})
@@ -24,6 +37,23 @@ load_config({ProviderName, Opts = {_, _}}) ->
         {error, Err} ->
             handle_error({File, Err})
     end.
+
+validate_config([], ValidTerms) ->
+    {ok, ValidTerms};
+
+validate_config([F|Rest], Terms) when is_function(F) ->
+    io:format("Applying ~p to ~p~n", [F, Terms]),
+    case apply(F, [Terms]) of
+        {ok, ValidTerms} ->
+            validate_config(Rest, ValidTerms);
+        {error, Reason} ->
+            {error, {invalid_config, Reason}}
+    end.
+
+load_valid_config(ProviderName, Opts, RawConfig, Terms) ->
+    confetti_utils:clear_alarm(ProviderName),
+    confetti_writer:store_working_config(ProviderName, Opts, RawConfig, Terms),
+    {ok, RawConfig, Terms}.
 
 last_working_config(ProviderName) ->
     case ets:lookup(confetti, ProviderName) of

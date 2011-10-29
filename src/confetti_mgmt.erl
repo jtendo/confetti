@@ -8,7 +8,8 @@
 
 -define(HELO,
             fun() ->
-                    {ok, Helo} = file:read_file("priv/helo.txt"),
+                    {ok, Helo} =
+                    file:read_file("priv/helo.txt"),
                     binary_to_list(Helo)
             end).
 

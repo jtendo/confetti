@@ -4,7 +4,7 @@
 
 %% API
 -export([start_link/2]).
--export([start/2]).
+-export([start/2, start/3]).
 -export([fetch/1, reload/1]).
 
 %% gen_server callbacks
@@ -19,18 +19,27 @@
 %%% API
 %%%===================================================================
 
-start(ProviderName, ClientPid) when is_pid(ClientPid) ->
-    Opts = {atom_to_list(ProviderName) ++ ".conf", "conf"},
+start(ProviderName, ClientPid, Opts) when is_pid(ClientPid) ->
     {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
     ok = gen_server:call(ProviderName, {subscribe, ProviderName, ClientPid}),
     {ok, Pid};
 
+start(ProviderName, ClientName, Opts) when is_atom(ClientName) ->
+    start(ProviderName, whereis(ClientName), Opts).
+
+start(ProviderName, ClientPid) when is_pid(ClientPid) ->
+    start(ProviderName, ClientPid,
+        [{location, {atom_to_list(ProviderName) ++ ".conf", "conf"}},
+         {validators, []}
+        ]);
+
 start(ProviderName, ClientName) when is_atom(ClientName) ->
     start(ProviderName, whereis(ClientName)).
 
+
 reload(ProviderName) ->
     case gen_server:call(ProviderName, {reload_config, ProviderName}) of
-        ok -> notify_subscribers(ProviderName, {config_reloaded});
+        {ok, Conf} -> notify_subscribers(ProviderName, {config_reloaded, Conf});
         Err -> Err
     end.
 
@@ -64,8 +73,8 @@ handle_call({reload_config, ProviderName}, _From, State) ->
             NewState = State#provider{raw_conf=NewRawConf, conf=NewConf},
             Conf = State#provider.conf,
             RawConf = State#provider.raw_conf,
-            confetti_writer:dump_config(Opts, Conf, RawConf),
-            {reply, ok, NewState};
+            confetti_writer:dump_config(proplists:get_value(location, Opts), Conf, RawConf),
+            {reply, {ok, NewConf}, NewState};
         Error ->
             {reply, Error, State}
     end;

@@ -6,28 +6,52 @@
 -export([init/0, help/1]).
 -export([reload/1, reload/2]).
 -export([fetch/1]).
+-export([cluster/0]).
+-export([broadcast/1, broadcast/2]).
 
--help([
+-define(HELP, [
         {"reload",
-            {"Module [CsvNodeList]",
-             "Reload Module configuration, optionally on remote nodes."}},
+            {"Module",
+                 "Reload local node Module configuration."}},
 
         {"fetch",
             {"Module",
-             "Fetch current Module config (in-memory)"}},
+                 "Fetch current Module config (in-memory working copy)"}},
+
+        {"broadcast",
+            {"Module [Nodes]",
+                 "Broadcast local node working configuration copy to nodes Nodes."
+                 "Defaults to cluster if Nodes not provided. See: 'help cluster'"}},
+
+        {"cluster",
+            {"",
+                "Display node names available in cluster."
+                "Current node is bypassed."}},
 
         {"help",
             {"Command",
-             "Display help on given command. Type `cmds` for list of all "
-             "available commands."}}
+                 "Display help on given command."
+                 "Type 'cmds' for list of all available commands."}}
     ]).
 
 %% just to make sure ?MODULE is loaded, FIXME code:load or something
 init() ->
     ok.
 
+cluster() ->
+    string:join(lists:map(fun(N) -> atom_to_list(N) end, nodes()), ",").
+
 fetch(Module) ->
     confetti_call(Module, fetch).
+
+broadcast(Module) ->
+    broadcast(Module, cluster()).
+
+broadcast(Module, []) ->
+    "No neighbour nodes found. Verify your cluster settings.";
+
+broadcast(Module, Nodes) ->
+    io_lib:format("Broadcast ~p to ~p", [Module, Nodes]).
 
 reload(Module) ->
     confetti_call(Module, reload).
@@ -36,21 +60,13 @@ reload(Module, _Nodes) ->
     confetti_call(Module, reload).
 
 cmds() ->
-    % FIXME relying on exports information is not the greatest idea
-    %
-    %Exports = ?MODULE:module_info(exports),
-    %L = lists:map(fun({Cmd,Arity}) when Cmd =/= module_info ->
-            %io_lib:format("~p/~p", [Cmd, Arity])
-        %end, Exports),
-    %string:join(L, "\n").
-    "meh".
+    string:join(lists:sort(proplists:get_keys(?HELP)), "\n").
 
 help() ->
     help("help").
 
 help(Anything) ->
-    Help = proplists:get_value(help, ?MODULE:module_info(attributes)),
-    case proplists:get_value(Anything, Help) of
+    case proplists:get_value(Anything, ?HELP) of
         undefined ->
             io_lib:format("Sorry, no help for ~p", [Anything]);
         {ExecHelp, HelpStr} ->
@@ -70,22 +86,4 @@ confetti_call(Module, Fun) ->
     catch _C:E ->
         throw({mgmt_call_failed, Fun, Module, E})
     end.
-
-
-%format_arity(ArityInfo) ->
-%    string:join(lists:map(fun integer_to_list/1, ArityInfo), " or ").
-
-%discover_arity(F) ->
-%    Exports = ?MODULE:module_info(exports),
-%    try list_to_existing_atom(F) of
-%        Func when is_atom(Func) ->
-%            case proplists:get_all_values(Func, Exports) of
-%                undefined -> "unknown number of";
-%                ArityInfo -> format_arity(ArityInfo)
-%            end;
-%        _ -> "unknown number of"
-%    catch _C:_E ->
-%        "unknown number of"
-%    end.
-
 

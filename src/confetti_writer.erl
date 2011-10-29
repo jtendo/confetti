@@ -7,8 +7,8 @@
 %%% API
 %%%===================================================================
 
-dump_config(Opts, _, RawConf) ->
-    dump(Opts, RawConf).
+dump_config(Location = {_, _}, _, RawConf) ->
+    dump(Location, RawConf).
 
 store_working_config(ProviderName, Opts, Conf, RawConf) ->
     ets:insert(confetti, {
@@ -19,8 +19,8 @@ store_working_config(ProviderName, Opts, Conf, RawConf) ->
 %%% Helpers
 %%%===================================================================
 
-dump(Opts, OutConf) ->
-    Fname = confetti_utils:fname(dump, Opts),
+dump(Location, OutConf) ->
+    Fname = confetti_utils:fname(dump, Location),
     case file:write_file(Fname, OutConf) of
         ok -> {ok, Fname};
         {error, Reason} -> {error, Reason}
