@@ -51,12 +51,18 @@ handle_info(?SOCK([4]), S = #state{socket=Socket}) ->
     send(Socket, "~nBye!", []),
     {stop, normal, S};
 
+handle_info(?SOCK("\r\n"), S = #state{socket=Socket}) ->
+    prompt(Socket),
+    {noreply, S};
+
 handle_info(?SOCK(E), S = #state{socket=Socket}) ->
     send(Socket, "~ts", [handle_command(cmd(E))]),
     prompt(Socket),
     {noreply, S};
+
 handle_info({tcp_closed, _}, S) ->
     {stop, normal, S};
+
 handle_info(_E,S) ->
     {noreply, S}.
 
@@ -108,6 +114,6 @@ send(Socket, Str, Args) ->
     inet:setopts(Socket, [{active, once}]),
     ok.
 
-cmd(Str) ->
+cmd(Str) when is_list(Str) ->
     string:tokens(hd(string:tokens(Str, "\r\n")), " ").
 
