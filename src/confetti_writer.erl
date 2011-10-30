@@ -11,9 +11,7 @@ dump_config(Location = {_, _}, _, RawConf) ->
     dump(Location, RawConf).
 
 store_working_config(ProviderName, Opts, Conf, RawConf) ->
-    ets:insert(confetti, {
-            ProviderName, Opts, Conf, RawConf
-        }).
+    confetti_table_man:store({ProviderName, Opts, Conf, RawConf}).
 
 %%%===================================================================
 %%% Helpers

@@ -28,7 +28,7 @@ validate1(Conf) ->
     io:format("Operating on ~p~n", [Conf]),
     {ok, {modified_conf, Conf}}.
 
-validate2(Conf = {modified_conf, Data}) ->
+validate2(Conf = {modified_conf, _}) ->
     io:format("Another validator!~n"),
     io:format("Operating on ~p~n", [Conf]),
     {ok, {transofmed_conf, Conf}}.

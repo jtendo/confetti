@@ -8,9 +8,17 @@
 
 -define(HELO,
             fun() ->
-                    {ok, Helo} =
-                    file:read_file("priv/helo.txt"),
-                    binary_to_list(Helo)
+                    case code:priv_dir(confetti) of
+                        {error, bad_name} -> HeloFile = "priv/helo.txt";
+                        Dir -> HeloFile = filename:join(Dir, "helo.txt")
+                    end,
+                    case filelib:is_file(HeloFile) of
+                        true ->
+                            {ok, Helo} = file:read_file(HeloFile),
+                            binary_to_list(Helo);
+                        false ->
+                            "Could not read helofile."
+                    end
             end).
 
 -define(PROMPT,
@@ -32,7 +40,7 @@ init(Socket) ->
     gen_server:cast(self(), accept),
     {ok, #state{socket=Socket}}.
 
-handle_call(E, _From, State) ->
+handle_call(_, _, State) ->
     {noreply, State}.
 
 %% Accepting a connection
@@ -42,7 +50,7 @@ handle_cast(accept, S = #state{socket=ListenSocket}) ->
     welcome(AcceptSocket),
     {noreply, S#state{socket=AcceptSocket}};
 
-handle_cast(Cast, State) ->
+handle_cast(_, State) ->
     {noreply, State}.
 
 handle_info(?SOCK([4]), S = #state{socket=Socket}) ->

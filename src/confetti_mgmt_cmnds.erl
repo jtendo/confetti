@@ -47,7 +47,7 @@ fetch(Module) ->
 broadcast(Module) ->
     broadcast(Module, cluster()).
 
-broadcast(Module, []) ->
+broadcast(_, []) ->
     "No neighbour nodes found. Verify your cluster settings.";
 
 broadcast(Module, Nodes) ->

@@ -55,7 +55,7 @@ load_valid_config(ProviderName, Opts, RawConfig, Terms) ->
     {ok, RawConfig, Terms}.
 
 last_working_config(ProviderName) ->
-    case ets:lookup(confetti, ProviderName) of
+    case confetti_table_man:lookup(ProviderName) of
         [] -> {error, no_previous_config};
         [{ProviderName, Opts, PrevConf, PrevRawConf}] ->
             {ok, {Opts, PrevConf, PrevRawConf}}
