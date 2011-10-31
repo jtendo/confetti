@@ -1,52 +1,70 @@
 -module(confetti_mgmt_cmnds).
 -author('adam.rutkowski@jtendo.com').
 
--export([help/0, help/1]).
--export([cmds/0]).
 -export([reload/1, reload/2]).
 -export([fetch/1]).
--export([cluster/0]).
+-export([cluster/0, cluster/1]).
 -export([broadcast/1, broadcast/2]).
 
--define(HELP, [
-        {"reload",
-            {"Module",
-                 "Reload local node Module configuration."}},
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 cluster                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        {"fetch",
-            {"Module",
-                 "Fetch current Module config (in-memory working copy)"}},
-
-        {"broadcast",
-            {"Module [Nodes]",
-                 "Broadcast local node working configuration copy to nodes Nodes."
-                 "Defaults to cluster if Nodes not provided. See: 'help cluster'"}},
-
-        {"cluster",
-            {"",
-                "Display node names available in cluster."
-                "Current node is bypassed."}},
-
-        {"help",
-            {"Command",
-                 "Display help on given command."
-                 "Type 'cmds' for list of all available commands."}}
-    ]).
+cluster(help) ->
+    "Display node names available in cluster. Current node is bypassed.\n"
+    "Usage:\n\n"
+    "> cluster".
 
 cluster() ->
-    string:join(lists:map(fun(N) -> atom_to_list(N) end, nodes()), ",").
+    case nodes() of
+        [] ->
+            "No neighbor nodes found.";
+        Nodes ->
+            string:join(lists:map(fun(N) -> atom_to_list(N) end, Nodes), ",")
+    end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                  fetch                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fetch(help) ->
+    "Fetch runtime module configuration\n"
+    "Usage:\n\n"
+    "> fetch mymodule";
 
 fetch(Module) ->
     confetti_call(Module, fetch).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                broadcast                                %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+broadcast(help) ->
+     "Broadcast local node working configuration copy to nodes Nodes.\n"
+     "Defaults to cluster if Nodes not provided. See: 'help cluster'.\n"
+     "Usage:\n\n"
+     "> broadcast node@host1,node@host2\n\n"
+     "or\n"
+     "> broadcast";
 
 broadcast(Module) ->
     broadcast(Module, cluster()).
 
 broadcast(_, []) ->
-    "No neighbour nodes found. Verify your cluster settings.";
+    "No neighbor nodes found. Verify your cluster settings.";
 
 broadcast(Module, Nodes) ->
+    % TODO implement me / rpc multicall
     io_lib:format("Broadcast ~p to ~p", [Module, Nodes]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 reload                                  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+reload(help) ->
+    "Reload local node Module configuration.\n"
+    "Usage:\n\n"
+    "> reload mymodule";
 
 reload(Module) ->
     confetti_call(Module, reload).
@@ -54,21 +72,9 @@ reload(Module) ->
 reload(Module, _Nodes) ->
     confetti_call(Module, reload).
 
-cmds() ->
-    string:join(lists:sort(proplists:get_keys(?HELP)), "\n").
 
-help() ->
-    help("help").
 
-help(Anything) ->
-    case proplists:get_value(Anything, ?HELP) of
-        undefined ->
-            io_lib:format("Sorry, no help for ~p", [Anything]);
-        {ExecHelp, HelpStr} ->
-            io_lib:format("~s~n  usage:~n~n  > ~s ~s~n", [
-                    HelpStr, Anything, ExecHelp
-                ])
-    end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                           internal functions                            %

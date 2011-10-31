@@ -29,12 +29,16 @@
 -record(state, {socket}). % the current socket
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                          gen_server callbacks                           %
+%                                   API                                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link(Socket) ->
     code:ensure_loaded(confetti_mgmt_cmnds),
     gen_server:start_link(?MODULE, Socket, []).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                          gen_server callbacks                           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init(Socket) ->
     gen_server:cast(self(), accept),
@@ -82,21 +86,42 @@ terminate(_Reason, _State) ->
 %                           management handlers                           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+handle_command(["help"]) ->
+    "Usage: help COMMAND";
+
+handle_command(["help"|Topic]) ->
+    ErrMsg = io_lib:format("No help for ~s", [hd(Topic)]),
+    try_execute(hd(Topic), [help], [
+            {export_err, ErrMsg},
+            {except_err, ErrMsg}
+        ]);
+
 handle_command([Cmd|Params]) ->
-     try list_to_existing_atom(Cmd) of
+    try_execute(Cmd, Params).
+
+try_execute(F, A) ->
+    try_execute(F, A, [
+            {export_err, "Unknown command or syntax error"},
+            {except_err, "Unknown command"}
+        ]).
+
+try_execute(F, A, ErrMsgs) ->
+    io:format("Trying execute ~p ~p~n", [F, A]),
+     try list_to_existing_atom(F) of
          Func when is_atom(Func) ->
-                    case erlang:function_exported(confetti_mgmt_cmnds, Func, length(Params)) of
+                    case erlang:function_exported(confetti_mgmt_cmnds, Func,
+                            length(A)) of
                         true ->
-                            try apply(confetti_mgmt_cmnds, Func, Params) of
+                            try apply(confetti_mgmt_cmnds, Func, A) of
                                 Result -> Result
                                 catch Class:Error ->
                                     io_lib:format("Error (~p): ~p", [Class, Error])
                             end;
                         false ->
-                            "Command not supported or parameters arity mismatch. Try: help "++Cmd
+                            proplists:get_value(export_err, ErrMsgs)
                     end
                 catch _Class:_Error ->
-                    "Unknown command."
+                    proplists:get_value(except_err, ErrMsgs)
             end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
