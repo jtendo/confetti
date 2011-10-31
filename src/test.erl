@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 2011-10-26 10:14:13.101666
 %%%-------------------------------------------------------------------
--module(test).
+-module(example_srv).
 
 -behaviour(gen_server).
 
@@ -35,7 +35,7 @@ validate2(Conf = {modified_conf, _}) ->
 
 start_link() ->
     {ok, Pid} = gen_server:start_link({local, ?SERVER}, ?MODULE, [], []),
-    confetti:start(example, ?SERVER, [
+    confetti:use(example, [
             {location, {"example.conf", "conf"}},
             {validators, [fun validate1/1, fun validate2/1]}
         ]),

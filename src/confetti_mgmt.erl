@@ -4,27 +4,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          code_change/3, terminate/2]).
 
--define(SOCK(Msg), {tcp, _Port, Msg}).
-
--define(HELO,
-            fun() ->
-                    case code:priv_dir(confetti) of
-                        {error, bad_name} -> HeloFile = "priv/helo.txt";
-                        Dir -> HeloFile = filename:join(Dir, "helo.txt")
-                    end,
-                    case filelib:is_file(HeloFile) of
-                        true ->
-                            {ok, Helo} = file:read_file(HeloFile),
-                            binary_to_list(Helo);
-                        false ->
-                            "Could not read helofile."
-                    end
-            end).
-
--define(PROMPT,
-            fun() ->
-                    io_lib:format("(~w)> ", [node()])
-            end).
+-include("confetti.hrl").
 
 -record(state, {socket}). % the current socket
 
@@ -42,6 +22,7 @@ start_link(Socket) ->
 
 init(Socket) ->
     gen_server:cast(self(), accept),
+    confetti:use(mgmt_conf),
     {ok, #state{socket=Socket}}.
 
 handle_call(_, _, State) ->
@@ -106,23 +87,23 @@ try_execute(F, A) ->
         ]).
 
 try_execute(F, A, ErrMsgs) ->
-    io:format("Trying execute ~p ~p~n", [F, A]),
-     try list_to_existing_atom(F) of
+    CommandsModule = ?FETCH(mgmt_conf, cmd_module),
+    try list_to_existing_atom(F) of
          Func when is_atom(Func) ->
-                    case erlang:function_exported(confetti_mgmt_cmnds, Func,
-                            length(A)) of
-                        true ->
-                            try apply(confetti_mgmt_cmnds, Func, A) of
-                                Result -> Result
-                                catch Class:Error ->
-                                    io_lib:format("Error (~p): ~p", [Class, Error])
-                            end;
-                        false ->
-                            proplists:get_value(export_err, ErrMsgs)
-                    end
-                catch _Class:_Error ->
-                    proplists:get_value(except_err, ErrMsgs)
-            end.
+            case erlang:function_exported(CommandsModule, Func,
+                    length(A)) of
+                true ->
+                    try apply(confetti_mgmt_cmnds, Func, A) of
+                        Result -> Result
+                        catch Class:Error ->
+                            io_lib:format("Error (~p): ~p", [Class, Error])
+                    end;
+                false ->
+                    proplists:get_value(export_err, ErrMsgs)
+            end
+        catch _Class:_Error ->
+            proplists:get_value(except_err, ErrMsgs)
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                            helper functions                             %

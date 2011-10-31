@@ -4,7 +4,7 @@
 
 %% API
 -export([start_link/2]).
--export([start/2, start/3]).
+-export([use/1, use/2]).
 -export([fetch/1, reload/1]).
 
 %% gen_server callbacks
@@ -19,23 +19,23 @@
 %%% API
 %%%===================================================================
 
-start(ProviderName, ClientPid, Opts) when is_pid(ClientPid) ->
-    {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
-    ok = gen_server:call(ProviderName, {subscribe, ProviderName, ClientPid}),
-    {ok, Pid};
-
-start(ProviderName, ClientName, Opts) when is_atom(ClientName) ->
-    start(ProviderName, whereis(ClientName), Opts).
-
-start(ProviderName, ClientPid) when is_pid(ClientPid) ->
-    start(ProviderName, ClientPid,
+use(ProviderName) ->
+    use(ProviderName,
         [{location, {atom_to_list(ProviderName) ++ ".conf", "conf"}},
-         {validators, []}
-        ]);
+         {validators, []},
+         {subscribe, true}
+        ]).
 
-start(ProviderName, ClientName) when is_atom(ClientName) ->
-    start(ProviderName, whereis(ClientName)).
-
+use(ProviderName, Opts) ->
+    {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
+    Subscribe = proplists:get_value(subscribe, Opts, false),
+    case Subscribe of
+        true ->
+            ok = gen_server:call(ProviderName, {subscribe, ProviderName}),
+            {ok, Pid};
+        _ ->
+            {ok, Pid}
+    end.
 
 reload(ProviderName) ->
     case gen_server:call(ProviderName, {reload_config, ProviderName}) of
@@ -82,7 +82,7 @@ handle_call({reload_config, ProviderName}, _From, State) ->
 handle_call({fetch_config}, _From, State) ->
     {reply, State#provider.conf, State};
 
-handle_call({subscribe, ProviderName, Pid}, _From, State) ->
+handle_call({subscribe, ProviderName}, {Pid, _}, State) ->
     ok = join_pool(ProviderName, Pid),
     {reply, ok, State};
 

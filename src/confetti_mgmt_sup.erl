@@ -4,18 +4,24 @@
 -export([start_link/0, start_socket/0]).
 -export([init/1]).
 
+-include("confetti.hrl").
+
 start_link() ->
     {ok, Pid} = supervisor:start_link({local, ?MODULE}, ?MODULE, []),
     start_socket(),
     {ok, Pid}.
 
 init([]) ->
-    {ok, Port} = application:get_env(confetti, mgmt_port),
+    confetti:use(mgmt_conf, [
+            {location, {"mgmt_conf.conf", "conf"}},
+            {subscribe, false}
+        ]),
+    Port = ?FETCH(mgmt_conf, port),
     {ok, ListenSocket} = gen_tcp:listen(Port, [{active,once},
             {reuseaddr, true}]),
     {ok, {{simple_one_for_one, 60, 3600},
          [{socket,
-          {confetti_mgmt, start_link, [ListenSocket]}, % pass the socket!
+          {confetti_mgmt, start_link, [ListenSocket]},
           temporary, 1000, worker, [confetti_mgmt]}
          ]}}.
 
