@@ -98,7 +98,7 @@ find_cmd_module({Cmd, Arity}) ->
     end.
 
 try_execute(F, A) ->
-    try_execute(F, A, "Unknown command or syntax error");
+    try_execute(F, A, "Unknown command or syntax error").
 
 try_execute(F, A, ErrMsg) ->
     case find_cmd_module({F, length(A)}) of

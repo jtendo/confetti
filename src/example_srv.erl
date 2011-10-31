@@ -34,14 +34,16 @@ validate2(Conf = {modified_conf, _}) ->
     {ok, {transofmed_conf, Conf}}.
 
 start_link() ->
-    {ok, Pid} = gen_server:start_link({local, ?SERVER}, ?MODULE, [], []),
-    confetti:use(example, [
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+init([]) ->
+    {ok, ProviderPid} = confetti:use(example, [
             {location, {"example.conf", "conf"}},
             {validators, [fun validate1/1, fun validate2/1]}
         ]),
-    {ok, Pid}.
-
-init([]) ->
+    io:format("~n~n~nUsing provider: ~p~n~n~n", [ProviderPid]),
+    Conf = confetti:fetch(example),
+    io:format("Hi, I was initialized with config: ~p~n", [Conf]),
     {ok, 1}.
 
 handle_call(_Request, _From, State) ->
