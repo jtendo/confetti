@@ -16,7 +16,7 @@ init([]) ->
             {location, {"mgmt_conf.conf", "conf"}},
             {subscribe, false}
         ]),
-    Port = ?FETCH(mgmt_conf, port),
+    Port = ?FETCH(mgmt_conf, port, 50000),
     {ok, ListenSocket} = gen_tcp:listen(Port, [{active,once},
             {reuseaddr, true}]),
     {ok, {{simple_one_for_one, 60, 3600},

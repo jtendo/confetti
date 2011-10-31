@@ -13,7 +13,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link(Socket) ->
-    code:ensure_loaded(confetti_mgmt_cmnds),
     gen_server:start_link(?MODULE, Socket, []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,6 +22,8 @@ start_link(Socket) ->
 init(Socket) ->
     gen_server:cast(self(), accept),
     confetti:use(mgmt_conf),
+    lists:foreach(fun(M) -> {module, M} = code:ensure_loaded(M) end,
+        all_cmd_modules()),
     {ok, #state{socket=Socket}}.
 
 handle_call(_, _, State) ->
@@ -80,6 +81,25 @@ handle_command(["help"|Topic]) ->
 handle_command([Cmd|Params]) ->
     try_execute(Cmd, Params).
 
+find_cmd_module({_, _}, []) ->
+    {error, undefined};
+
+find_cmd_module({F, Arity}, [M|Rest]) ->
+    case erlang:function_exported(M, F, Arity) of
+        true ->
+            {found, {M, F}};
+        false ->
+            find_cmd_module({F, Arity}, Rest)
+    end.
+
+find_cmd_module({Cmd, Arity}) ->
+    try
+        F = list_to_existing_atom(Cmd),
+        find_cmd_module({F, Arity}, all_cmd_modules())
+    catch _:_ ->
+        {error, undefined}
+    end.
+
 try_execute(F, A) ->
     try_execute(F, A, [
             {export_err, "Unknown command or syntax error"},
@@ -87,22 +107,16 @@ try_execute(F, A) ->
         ]).
 
 try_execute(F, A, ErrMsgs) ->
-    CommandsModule = ?FETCH(mgmt_conf, cmd_module),
-    try list_to_existing_atom(F) of
-         Func when is_atom(Func) ->
-            case erlang:function_exported(CommandsModule, Func,
-                    length(A)) of
-                true ->
-                    try apply(confetti_mgmt_cmnds, Func, A) of
-                        Result -> Result
-                        catch Class:Error ->
-                            io_lib:format("Error (~p): ~p", [Class, Error])
-                    end;
-                false ->
-                    proplists:get_value(export_err, ErrMsgs)
+    case find_cmd_module({F, length(A)}) of
+        {error, undefined} ->
+             proplists:get_value(export_err, ErrMsgs);
+        {found, {Mod, Fun}} ->
+            try apply(Mod, Fun, A) of
+                Result ->
+                    Result
+            catch Class:Error ->
+                io_lib:format("Error (~p): ~p", [Class, Error])
             end
-        catch _Class:_Error ->
-            proplists:get_value(except_err, ErrMsgs)
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,4 +141,7 @@ send(Socket, Str, Args) ->
 
 cmd(Str) when is_list(Str) ->
     string:tokens(hd(string:tokens(Str, "\r\n")), " ").
+
+all_cmd_modules() ->
+    [confetti_mgmt_cmnds|?FETCH(mgmt_conf, user_modules, [])].
 
