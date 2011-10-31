@@ -1,9 +1,8 @@
 -module(confetti_mgmt_cmnds).
 -author('adam.rutkowski@jtendo.com').
 
--export([help/0]).
+-export([help/0, help/1]).
 -export([cmds/0]).
--export([init/0, help/1]).
 -export([reload/1, reload/2]).
 -export([fetch/1]).
 -export([cluster/0]).
@@ -33,10 +32,6 @@
                  "Display help on given command."
                  "Type 'cmds' for list of all available commands."}}
     ]).
-
-%% just to make sure ?MODULE is loaded, FIXME code:load or something
-init() ->
-    ok.
 
 cluster() ->
     string:join(lists:map(fun(N) -> atom_to_list(N) end, nodes()), ",").

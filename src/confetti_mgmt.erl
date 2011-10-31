@@ -33,7 +33,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link(Socket) ->
-    ok = confetti_mgmt_cmnds:init(),
+    code:ensure_loaded(confetti_mgmt_cmnds),
     gen_server:start_link(?MODULE, Socket, []).
 
 init(Socket) ->
