@@ -73,10 +73,7 @@ handle_command(["help"]) ->
 
 handle_command(["help"|Topic]) ->
     ErrMsg = io_lib:format("No help for ~s", [hd(Topic)]),
-    try_execute(hd(Topic), [help], [
-            {export_err, ErrMsg},
-            {except_err, ErrMsg}
-        ]);
+    try_execute(hd(Topic), [help], ErrMsg);
 
 handle_command([Cmd|Params]) ->
     try_execute(Cmd, Params).
@@ -101,15 +98,12 @@ find_cmd_module({Cmd, Arity}) ->
     end.
 
 try_execute(F, A) ->
-    try_execute(F, A, [
-            {export_err, "Unknown command or syntax error"},
-            {except_err, "Unknown command"}
-        ]).
+    try_execute(F, A, "Unknown command or syntax error");
 
-try_execute(F, A, ErrMsgs) ->
+try_execute(F, A, ErrMsg) ->
     case find_cmd_module({F, length(A)}) of
         {error, undefined} ->
-             proplists:get_value(export_err, ErrMsgs);
+             ErrMsg;
         {found, {Mod, Fun}} ->
             try apply(Mod, Fun, A) of
                 Result ->
