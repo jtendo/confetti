@@ -1,4 +1,3 @@
-%% This is automatic dump
 %% This is some comment
 ["hello"].
 [
@@ -8,7 +7,7 @@
 
 [
     {foo, bar, blah, "ąęćź"},
-    {woo, hoo} % make sure woo exists!
+    {woo, co_tam} % make sure woo exists!
 ].
 
 {yo, foo}.

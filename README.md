@@ -31,6 +31,10 @@ you for this:
 3. Easy to use
 
     ```erlang
+    application:start(confetti).
+    ```
+
+    ```erlang
     %% your process
     %% (...)
     confetti:use(my_foo),   %% reads configuration terms
