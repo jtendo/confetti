@@ -1,29 +1,91 @@
 Confetti
 ========
 
-**This is just a draft at experimental stage.**
+**PLEASE NOTE: This is just a draft at experimental stage, there's still a
+bunch of things to implement.**
 
-The idea:
----------
+Confetti is configuration provider for your Erlang applications.
 
-1. If you can perform code hot-swap, you should do well with config
-2. Assumption: config is Erlang term(s) and application:get_env/2 is rough
-3. Works within multinode cluster; edit config on one node, push it to the
-   others, have local backups automatically created on successful reload
-4. Provides shell for management, easily extensible with user-commands: http://cl.ly/1m1D0P1H322u2Z0k0I03
-5. Works well with Unicode
-6. Write your own in/out hooks for config processing (i.e. have config dumps annotated)
-7. Register as many config providers as you like - no broken config for Mod1 can break Mod2
+Basically it's `application:get_env/2` on steroids.
 
+Features
+--------
 
-Status:
+1. Management console (accessible via telnet) - maintenance department **will** love
+you for this:
+
+    * configuration reload in runtime (your processes receive notifications on reload)
+    * easily extensible with your own management commands (plugins!)
+    * broadcast working configuration across the Erlang cluster
+
+    ![Confetti management console](http://mtod.org/assets/75/blnil7js4k0k4.png)
+
+2. Configuration supervision:
+
+   * increase your system's uptime - previous working configuration is backed
+     up in DETS, in case someone messes up the configuration files
+   * broken config for ``process_a`` can not break ``process_b``
+
+    ![Confetti supervision tree](http://mtod.org/assets/83/n4jtwvai8s4ck.png)
+
+3. Easy to use:
+
+        ```erlang
+        %% your process
+        %% (...)
+        confetti:use(my_foo),   %% reads configuration terms
+                                %% from "conf/my_foo.conf"
+        confetti:fetch(my_foo)  %% fetches the configuration terms
+        %% (...)
+        %% react to configuration changes
+        handle_info({config_reloaded, NewConf}, State) -> (...)
+        ```
+
+4. Customizable:
+
+    * Write configuration validators and more:
+
+            ```erlang
+            confetti:use(foo, [
+                %% specify config file location
+                {location, {"conf/bar", "foo.cnf"},
+                %% make sure it's more than just correct Erlang term
+                %% or even transform the terms into something!
+                {validators, [fun validate_foo_config/1]},
+                %% ignore notifications for current process
+                {subscribe, false}
+            ]).
+            ```
+
+    * Expose any module via the management console
+
+            ```erlang
+            %% mgmt_conf.conf (confetti uses confetti, so meta!)
+            {port, 50000}.
+            {plugins, [my_commands]}.
+            ```
+
+            ```erlang
+            %% my_commands.erl
+            %% (...)
+            export([foo/1, foo/3]).
+            foo(help) ->
+                "Foo does bar two times!".
+            foo(Param1, Param2, Param3) ->
+                %% perform command logic
+                "bar bar".
+            ```
+
+    * Provide your own welcome screen to the management console.
+
+License
 -------
 
-This a weekend pet project of mine. Unfinished and probably ugly here & there.
-I will probably take care of it someday.
-Also, I had something similar working on production, but you know how it is:
-
-http://blogs.msdn.com/cfs-file.ashx/__key/CommunityServer-Blogs-Components-WeblogFiles/00-00-01-32-02-metablogapi/8054.image_5F00_thumb_5F00_35C6E986.png
+BSD License.
 
 
-
+Contribute!
+-----------
+Feel encouraged to spot bugs/poor code and implement new sexy features.
+Also, remember to add yourself to the ``-authors`` where appropriate!
+Thanks.
