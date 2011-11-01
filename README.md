@@ -28,55 +28,56 @@ you for this:
 
    ![Confetti supervision tree](http://mtod.org/assets/83/n4jtwvai8s4ck.png)
 
-3. Easy to use:
+3. Easy to use
 
-```erlang
-%% your process
-%% (...)
-confetti:use(my_foo),   %% reads configuration terms
-                        %% from "conf/my_foo.conf"
-confetti:fetch(my_foo)  %% fetches the configuration terms
-%% (...)
-%% react to configuration changes
-handle_info({config_reloaded, NewConf}, State) -> (...)
-```
+    ```erlang
+    %% your process
+    %% (...)
+    confetti:use(my_foo),   %% reads configuration terms
+                            %% from "conf/my_foo.conf"
+    confetti:fetch(my_foo)  %% fetches the configuration terms
+    %% (...)
+    %% react to configuration changes
+    handle_info({config_reloaded, NewConf}, State) -> (...)
+    ```
 
-4. Customizable:
+4. Customizable
 
     * Write configuration validators and more:
 
-```erlang
-confetti:use(foo, [
-    %% specify config file location
-    {location, {"conf/bar", "foo.cnf"},
-    %% make sure it's more than just correct Erlang term
-    %% or even transform the terms into something!
-    {validators, [fun validate_foo_config/1]},
-    %% ignore notifications for current process
-    {subscribe, false}
-]).
-```
+    ```erlang
+    confetti:use(foo, [
+        %% specify config file location
+        {location, {"conf/bar", "foo.cnf"},
+        %% make sure it's more than just correct Erlang term
+        %% or even transform the terms into something!
+        {validators, [fun validate_foo_config/1]},
+        %% ignore notifications for current process
+        {subscribe, false}
+    ]).
+    ```
 
     * Expose any module via the management console
 
-```erlang
-%% mgmt_conf.conf (confetti uses confetti, so meta!)
-{port, 50000}.
-{plugins, [my_commands]}.
-```
+    ```erlang
+    %% mgmt_conf.conf (confetti uses confetti, so meta!)
+    {port, 50000}.
+    {plugins, [my_commands]}.
+    ```
 
-```erlang
-%% my_commands.erl
-%% (...)
-export([foo/1, foo/3]).
-foo(help) ->
-    "Foo does bar two times!".
-foo(Param1, Param2, Param3) ->
-    %% perform command logic
-    "bar bar".
-```
+    ```erlang
+    %% my_commands.erl
+    %% (...)
+    export([foo/1, foo/3]).
+    foo(help) ->
+        "Foo does bar two times!".
+    foo(Param1, Param2, Param3) ->
+        %% perform command logic
+        "bar bar".
+    ```
 
     * Provide your own welcome screen to the management console.
+
 
 License
 -------
