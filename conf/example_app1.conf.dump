@@ -1,6 +1,0 @@
-%% This is automatic dump
-%% This is some comment
-[
-    {foo, bar, blah, "ąęćź"},
-    {woo, hoo} % make sure woo exists!
-].
