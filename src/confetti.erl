@@ -19,12 +19,23 @@
 %%% API
 %%%===================================================================
 
+-type opts() :: [
+    {location, {Filename :: string(), Directory :: string()}} |
+    {validators, [fun( (Conf :: term()) ->
+                        {ok, NewConf :: term()} | {error, Reason :: any()} )]} |
+    {subscribe, boolean()}
+].
+
+-spec use(ProviderName :: atom()) -> {ok, Pid :: pid()}.
+
 use(ProviderName) ->
     use(ProviderName,
         [{location, {atom_to_list(ProviderName) ++ ".conf", "conf"}},
          {validators, []},
          {subscribe, true}
         ]).
+
+-spec use(ProviderName :: atom(), Opts :: opts()) -> {ok, Pid :: pid()}.
 
 use(ProviderName, Opts) ->
     {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
@@ -37,11 +48,15 @@ use(ProviderName, Opts) ->
             {ok, Pid}
     end.
 
+-spec reload(ProviderName :: atom()) -> ok.
+
 reload(ProviderName) ->
     case gen_server:call(ProviderName, {reload_config, ProviderName}) of
         {ok, Conf} -> notify_subscribers(ProviderName, {config_reloaded, Conf});
         Err -> Err
     end.
+
+-spec fetch(ProviderName :: atom()) -> Conf :: term().
 
 fetch(ProviderName) ->
     gen_server:call(ProviderName, {fetch_config}).
@@ -93,9 +108,9 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% just for debug purposes
-handle_info(calcbad, State) ->
-    1/0,
-    {noreply, State};
+%handle_info(calcbad, State) ->
+    %1/0,
+    %{noreply, State};
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -121,4 +136,5 @@ join_pool(Pool, Pid) ->
 notify_subscribers(Pool, Msg) ->
     lists:foreach(fun(Pid) ->
                 Pid ! Msg
-        end, pg2:get_local_members(Pool)).
+        end, pg2:get_local_members(Pool)),
+    ok.
