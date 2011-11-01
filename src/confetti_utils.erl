@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Confetti utlility module
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_utils).
 -author('adam.rutkowski@jtendo.com').
 -export([u_consult/1, fname/1, fname/2]).

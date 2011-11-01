@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Configuration loader
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_reader).
 -author('adam.rutkowski@jtendo.com').
 -export([load_config/1, last_working_config/1]).

@@ -5,14 +5,11 @@
   {registered, [
     confetti,
     confetti_mgmt,
-    confetti_client
+    confetti_table_man
     ]},
   {applications, [
                   kernel,
                   stdlib
                  ]},
-  {mod, { confetti_app, []}},
-  {env, [
-        {mgmt_port, 9991}
-    ]}
+  {mod, { confetti_app, []}}
  ]}.

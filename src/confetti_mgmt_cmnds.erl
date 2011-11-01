@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Default management console commands bundle
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_mgmt_cmnds).
 -author('adam.rutkowski@jtendo.com').
 

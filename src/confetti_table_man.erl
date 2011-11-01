@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% DETS Manager
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_table_man).
 
 -behaviour(gen_server).

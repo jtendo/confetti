@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Application main supervisor
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_sup_sup).
 -author('adam.rutkowski@jtendo.com').
 

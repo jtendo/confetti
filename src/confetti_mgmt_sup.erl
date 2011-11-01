@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Confetti Management server supervisor
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_mgmt_sup).
 -behaviour(supervisor).
 

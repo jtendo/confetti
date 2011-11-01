@@ -1,10 +1,9 @@
 %%%-------------------------------------------------------------------
 %%% @author Adam Rutkowski
-%%% @copyright (C) 2011, jtendo/
+%%% @copyright (C) 2011, jtendo
 %%% @doc
-%%%
+%%% Example: using confetti configuration provider.
 %%% @end
-%%% Created : 2011-10-26 10:14:13.101666
 %%%-------------------------------------------------------------------
 -module(example_srv).
 

@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Configuration providers supervisor
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_sup).
 -behaviour(supervisor).
 

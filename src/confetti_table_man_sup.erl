@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% DETS Manager supervisor
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_table_man_sup).
 
 -behaviour(supervisor).

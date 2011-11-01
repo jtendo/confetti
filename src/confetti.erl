@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Confetti main module
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti).
 -behaviour(gen_server).
 -include("confetti.hrl").
@@ -28,6 +35,12 @@
 
 -spec use(ProviderName :: atom()) -> {ok, Pid :: pid()}.
 
+
+%% @doc
+%% Obtains configuration provider process with default settings.
+%% Reads configuration terms from "conf/ProviderName.conf".
+%% Subscribes caller to configuration reload notification.
+
 use(ProviderName) ->
     use(ProviderName,
         [{location, {atom_to_list(ProviderName) ++ ".conf", "conf"}},
@@ -36,6 +49,10 @@ use(ProviderName) ->
         ]).
 
 -spec use(ProviderName :: atom(), Opts :: opts()) -> {ok, Pid :: pid()}.
+
+%% @doc
+%% Obtains configuration provider process
+%% @see opts()
 
 use(ProviderName, Opts) ->
     {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
@@ -50,6 +67,12 @@ use(ProviderName, Opts) ->
 
 -spec reload(ProviderName :: atom()) -> ok.
 
+%% @doc
+%% Reloads given provider's configuration from disk.
+%% Notifies subscribers with {config_reloaded, Conf} message on success.
+%% This function is not intented to be called directly.
+%% Confetti uses it via management console commands.
+
 reload(ProviderName) ->
     case gen_server:call(ProviderName, {reload_config, ProviderName}) of
         {ok, Conf} -> notify_subscribers(ProviderName, {config_reloaded, Conf});
@@ -58,8 +81,18 @@ reload(ProviderName) ->
 
 -spec fetch(ProviderName :: atom()) -> Conf :: term().
 
+%% @doc
+%% Fetch configuration terms from given provider process.
+%% User is responsible for implementing detailed
+%% config value getters.
+
 fetch(ProviderName) ->
     gen_server:call(ProviderName, {fetch_config}).
+
+%% @doc
+%% Starts the server, and pg2 pool if needed.
+%% This function is called by confetti_sup module and
+%% there is probably no need to call it directly.
 
 start_link(ProviderName, Opts) when is_atom(ProviderName) ->
     pg2:create(ProviderName),
@@ -68,6 +101,13 @@ start_link(ProviderName, Opts) when is_atom(ProviderName) ->
 %%%===================================================================
 %%% Gen Server Callbacks
 %%%===================================================================
+
+
+%% @doc
+%% Tries to load configuration for given provider.
+%% If disk configuration loading fails (i.e. config terms are broken,
+%% or configuration file does not exists), init/1 will try
+%% to fetch the last working configuration from DETS.
 
 init(Subject = {ProviderName, Opts}) ->
     case confetti_reader:load_config(Subject) of
@@ -80,6 +120,11 @@ init(Subject = {ProviderName, Opts}) ->
                 _Else -> Error
             end
     end.
+
+%% @private
+%% @doc
+%% Reload configuration for given provider.
+%% Dump previous configuration to disk on success.
 
 handle_call({reload_config, ProviderName}, _From, State) ->
     Opts = State#provider.opts,
@@ -94,8 +139,16 @@ handle_call({reload_config, ProviderName}, _From, State) ->
             {reply, Error, State}
     end;
 
+%% @private
+%% @doc
+%% Fetches the current provider's configuration from State.
+
 handle_call({fetch_config}, _From, State) ->
     {reply, State#provider.conf, State};
+
+%% @private
+%% @doc
+%% Join subscribers pool if not there already.
 
 handle_call({subscribe, ProviderName}, {Pid, _}, State) ->
     ok = join_pool(ProviderName, Pid),

@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Configuration saver.
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_writer).
 -author('adam.rutkowski@jtendo.com').
 -export([dump_config/3, store_working_config/4]).

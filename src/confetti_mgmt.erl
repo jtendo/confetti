@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%%% @author Adam Rutkowski
+%%% @copyright (C) 2011, jtendo
+%%% @doc
+%%% Management console socket server and function execution engine
+%%% @end
+%%%-------------------------------------------------------------------
 -module(confetti_mgmt).
 -behaviour(gen_server).
 -export([start_link/1]).
@@ -137,5 +144,5 @@ cmd(Str) when is_list(Str) ->
     string:tokens(hd(string:tokens(Str, "\r\n")), " ").
 
 all_cmd_modules() ->
-    [confetti_mgmt_cmnds|?FETCH(mgmt_conf, user_modules, [])].
+    [confetti_mgmt_cmnds|?FETCH(mgmt_conf, plugins, [])].
 
