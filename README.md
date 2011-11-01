@@ -18,7 +18,7 @@ you for this:
     * easily extensible with your own management commands (plugins!)
     * broadcast working configuration across the Erlang cluster
 
-   ![Confetti management console](http://mtod.org/assets/75/blnil7js4k0k4.png)
+       ![Confetti management console](http://mtod.org/assets/28/0tghkrg79c4g8.png)
 
 2. Configuration supervision:
 
@@ -26,7 +26,7 @@ you for this:
      up in DETS, in case someone messes up the configuration files
    * broken config for ``process_a`` can not break ``process_b``
 
-   ![Confetti supervision tree](http://mtod.org/assets/83/n4jtwvai8s4ck.png)
+       ![Confetti supervision tree](http://mtod.org/assets/83/n4jtwvai8s4ck.png)
 
 3. Easy to use
 
