@@ -9,7 +9,8 @@
     ]},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  sasl
                  ]},
   {mod, { confetti_app, []}}
  ]}.
