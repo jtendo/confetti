@@ -58,10 +58,10 @@ use(ProviderName, Opts) ->
     {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
     Subscribe = proplists:get_value(subscribe, Opts, false),
     case Subscribe of
-        true ->
-            ok = gen_server:call(ProviderName, {subscribe, ProviderName}),
+        false ->
             {ok, Pid};
         _ ->
+            ok = gen_server:call(ProviderName, {subscribe, ProviderName}),
             {ok, Pid}
     end.
 
