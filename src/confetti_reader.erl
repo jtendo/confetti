@@ -10,7 +10,6 @@
 -export([load_config/1, last_working_config/1]).
 -include("confetti.hrl").
 
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -49,11 +48,15 @@ validate_config([], ValidTerms) ->
     {ok, ValidTerms};
 
 validate_config([F|Rest], Terms) when is_function(F) ->
-    case apply(F, [Terms]) of
-        {ok, ValidTerms} ->
-            validate_config(Rest, ValidTerms);
-        {error, Reason} ->
-            {error, {invalid_config, Reason}}
+    try
+        case apply(F, [Terms]) of
+            {ok, ValidTerms} ->
+                validate_config(Rest, ValidTerms);
+            {error, Reason} ->
+                {error, {invalid_config, Reason}}
+        end
+    catch _C:Error ->
+        {error, {invalid_config, Error}}
     end.
 
 load_valid_config(ProviderName, Opts, RawConfig, Terms) ->

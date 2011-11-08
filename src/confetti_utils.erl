@@ -22,7 +22,7 @@ fname(normal, {Filename, Directory}) ->
 
 fname(dump, {Filename, Directory}) ->
     Marker = "_" ++ f_date(erlang:localtime()) ++ ".dump",
-    ConfigFile = filename:join(Directory, Filename ++ Marker),
+    ConfigFile = filename:join([Directory, "dump", Filename ++ Marker]),
     ConfigFile.
 
 fname(Location = {_, _}) ->

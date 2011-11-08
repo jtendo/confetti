@@ -56,7 +56,7 @@ use(ProviderName) ->
 
 use(ProviderName, Opts) ->
     {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
-    Subscribe = proplists:get_value(subscribe, Opts, false),
+    Subscribe = proplists:get_value(subscribe, Opts, true),
     case Subscribe of
         false ->
             {ok, Pid};
