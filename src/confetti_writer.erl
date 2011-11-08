@@ -24,7 +24,13 @@ store_working_config(ProviderName, Opts, Conf, RawConf) ->
 %%% Helpers
 %%%===================================================================
 
-dump(Location, OutConf) ->
+dump({_,D} = Location, OutConf) ->
+    DumpDir = filename:join([D, "dump"]),
+    case filelib:is_dir(DumpDir) of
+        true -> ok;
+        false ->
+            file:make_dir(DumpDir)
+    end,
     Fname = confetti_utils:fname(dump, Location),
     case file:write_file(Fname, OutConf) of
         ok -> {ok, Fname};
