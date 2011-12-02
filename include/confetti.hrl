@@ -10,18 +10,24 @@
 
 -define(SOCK(Msg), {tcp, _Port, Msg}).
 
+-define(LOAD, fun(D,F) ->
+        P = filename:join(D, F),
+        {ok, C} = file:read_file(P),
+        binary_to_list(C)
+    end).
+
 -define(HELO,
             fun() ->
-                    case code:priv_dir(confetti) of
-                        {error, bad_name} -> HeloFile = "priv/helo.txt";
-                        Dir -> HeloFile = filename:join(Dir, "helo.txt")
-                    end,
-                    case filelib:is_file(HeloFile) of
+                    case filelib:is_file("priv/helo.txt") of
                         true ->
-                            {ok, Helo} = file:read_file(HeloFile),
-                            binary_to_list(Helo);
+                            ?LOAD("priv", "helo.txt");
                         false ->
-                            "Could not read helofile."
+                            case code:priv_dir(confetti) of
+                                {error, bad_name} ->
+                                    "Could not read helofile";
+                                Dir ->
+                                    ?LOAD(Dir, "helo.txt")
+                            end
                     end
             end).
 
