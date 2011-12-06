@@ -10,10 +10,13 @@
 -export([start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          code_change/3, terminate/2]).
-
+-compile([export_all]).
 -include("confetti.hrl").
 
 -record(state, {socket}). % the current socket
+
+% functions that should not be treated as management commands
+-define(PRIVATE_INTERFACE, [module_info]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                   API                                   %
@@ -76,7 +79,8 @@ terminate(_Reason, _State) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 handle_command(["help"]) ->
-    "Usage: help COMMAND";
+    AvailableCommands = lists:map(fun get_plugin_help/1, all_cmd_modules()),
+    string:join(AvailableCommands, "\n");
 
 handle_command(["help"|Topic]) ->
     ErrMsg = io_lib:format("No help for ~s", [hd(Topic)]),
@@ -114,7 +118,10 @@ try_execute(F, A, ErrMsg) ->
         {found, {Mod, Fun}} ->
             try apply(Mod, Fun, A) of
                 Result ->
-                    Result
+                    case is_string(Result) of
+                        true -> Result;
+                        false -> "Error: bad return"
+                    end
             catch Class:Error ->
                 io_lib:format("Error (~p): ~p", [Class, Error])
             end
@@ -123,6 +130,9 @@ try_execute(F, A, ErrMsg) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                            helper functions                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+is_string([H|_]) when is_integer(H) -> true;
+is_string(_) -> false.
 
 prompt(Socket) ->
     gen_tcp:send(Socket, ?PROMPT()),
@@ -146,3 +156,13 @@ cmd(Str) when is_list(Str) ->
 all_cmd_modules() ->
     [confetti_mgmt_cmnds|?FETCH(mgmt_conf, plugins, [])].
 
+get_plugin_help(Module) ->
+    [{exports, Exports}|_] = Module:module_info(),
+    UExports = proplists:get_keys(Exports),
+    Mod = string:left(atom_to_list(Module), 30) ++ ":",
+    lists:foldl(fun(F, Acc) ->
+                    case lists:member(F, ?PRIVATE_INTERFACE) of
+                        true -> Acc;
+                        false -> string:join([Acc, atom_to_list(F)], " ")
+                    end
+                end, Mod, UExports).
