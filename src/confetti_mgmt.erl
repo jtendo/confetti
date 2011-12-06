@@ -117,11 +117,7 @@ try_execute(F, A, ErrMsg) ->
              ErrMsg;
         {found, {Mod, Fun}} ->
             try apply(Mod, Fun, A) of
-                Result ->
-                    case is_string(Result) of
-                        true -> Result;
-                        false -> "Error: bad return"
-                    end
+                Result -> Result
             catch Class:Error ->
                 io_lib:format("Error (~p): ~p", [Class, Error])
             end
@@ -130,9 +126,6 @@ try_execute(F, A, ErrMsg) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                            helper functions                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-is_string([H|_]) when is_integer(H) -> true;
-is_string(_) -> false.
 
 prompt(Socket) ->
     gen_tcp:send(Socket, ?PROMPT()),
@@ -146,7 +139,13 @@ welcome(Socket) ->
     ok.
 
 send(Socket, Str, Args) ->
-    gen_tcp:send(Socket, io_lib:format(Str++"~n", Args)),
+    try io_lib:format(Str++"~n", Args) of
+        FormattedResult ->
+            gen_tcp:send(Socket, FormattedResult)
+    catch _:_ ->
+            gen_tcp:send(Socket,
+                io_lib:format("Error: Could not format command output~n", []))
+    end,
     inet:setopts(Socket, [{active, once}]),
     ok.
 
