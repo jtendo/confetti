@@ -10,7 +10,7 @@
 -export([start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          code_change/3, terminate/2]).
-
+-compile([export_all]).
 -include("confetti.hrl").
 
 -record(state, {socket}). % the current socket
@@ -76,7 +76,8 @@ terminate(_Reason, _State) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 handle_command(["help"]) ->
-    "Usage: help COMMAND";
+    AvailableCommands = lists:map(fun get_plugin_help/1, all_cmd_modules()),
+    string:join(AvailableCommands, "\n");
 
 handle_command(["help"|Topic]) ->
     ErrMsg = io_lib:format("No help for ~s", [hd(Topic)]),
@@ -146,3 +147,10 @@ cmd(Str) when is_list(Str) ->
 all_cmd_modules() ->
     [confetti_mgmt_cmnds|?FETCH(mgmt_conf, plugins, [])].
 
+get_plugin_help(Module) ->
+    [{exports, Exports}|_] = Module:module_info(),
+    UExports = proplists:get_keys(Exports),
+    Mod = string:left(atom_to_list(Module), 30) ++ ":",
+    lists:foldl(fun(F, Acc) ->
+                    string:join([Acc, atom_to_list(F)], " ")
+                end, Mod, UExports).
