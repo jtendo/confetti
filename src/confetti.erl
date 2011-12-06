@@ -74,9 +74,13 @@ use(ProviderName, Opts) ->
 %% Confetti uses it via management console commands.
 
 reload(ProviderName) ->
-    case gen_server:call(ProviderName, {reload_config, ProviderName}) of
-        {ok, Conf} -> notify_subscribers(ProviderName, {config_reloaded, Conf});
-        Err -> Err
+    case is_provider(ProviderName) of
+        true ->
+            case gen_server:call(ProviderName, {reload_config, ProviderName}) of
+                {ok, Conf} -> notify_subscribers(ProviderName, {config_reloaded, Conf});
+                Err -> Err
+            end;
+        false -> not_provider(ProviderName)
     end.
 
 -spec fetch(ProviderName :: atom()) -> Conf :: term().
@@ -87,7 +91,10 @@ reload(ProviderName) ->
 %% config value getters.
 
 fetch(ProviderName) ->
-    gen_server:call(ProviderName, {fetch_config}).
+    case is_provider(ProviderName) of
+        true -> gen_server:call(ProviderName, {fetch_config});
+        false -> not_provider(ProviderName)
+    end.
 
 %% @doc
 %% Starts the server, and pg2 pool if needed.
@@ -191,3 +198,14 @@ notify_subscribers(Pool, Msg) ->
                 Pid ! Msg
         end, pg2:get_local_members(Pool)),
     ok.
+
+is_provider(ProviderName) ->
+    case whereis(ProviderName) of
+        Pid when is_pid(Pid) ->
+            Providers = supervisor:which_children(confetti_sup),
+            lists:member(Pid, [P || {_,P,_,_} <- Providers]);
+        _ -> false
+    end.
+
+not_provider(ProviderName) ->
+    throw({unknown_provider, ProviderName}).
