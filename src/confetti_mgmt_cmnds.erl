@@ -12,6 +12,7 @@
 -export([fetch/1]).
 -export([cluster/0, cluster/1]).
 -export([broadcast/1, broadcast/2]).
+-export([modules/0, modules/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                 cluster                                 %
@@ -79,9 +80,19 @@ reload(Module) ->
 reload(Module, _Nodes) ->
     confetti_call(Module, reload).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 modules                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+modules(help) ->
+    "List available configuration providers".
 
-
+modules() ->
+    Title = string:left("Modules", 20) ++ ":",
+    lists:foldl(fun({_,Pid,_,_}, Acc) ->
+                    N = proplists:get_value(registered_name, erlang:process_info(Pid)),
+                    string:join([Acc, atom_to_list(N)], " ")
+                end, Title, supervisor:which_children(confetti_sup)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                           internal functions                            %
