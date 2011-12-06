@@ -15,6 +15,9 @@
 
 -record(state, {socket}). % the current socket
 
+% functions that should not be treated as management commands
+-define(PRIVATE_INTERFACE, [module_info]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                   API                                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -115,7 +118,10 @@ try_execute(F, A, ErrMsg) ->
         {found, {Mod, Fun}} ->
             try apply(Mod, Fun, A) of
                 Result ->
-                    Result
+                    case is_string(Result) of
+                        true -> Result;
+                        false -> "Error: bad return"
+                    end
             catch Class:Error ->
                 io_lib:format("Error (~p): ~p", [Class, Error])
             end
@@ -124,6 +130,9 @@ try_execute(F, A, ErrMsg) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                            helper functions                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+is_string([H|_]) when is_integer(H) -> true;
+is_string(_) -> false.
 
 prompt(Socket) ->
     gen_tcp:send(Socket, ?PROMPT()),
@@ -152,5 +161,8 @@ get_plugin_help(Module) ->
     UExports = proplists:get_keys(Exports),
     Mod = string:left(atom_to_list(Module), 30) ++ ":",
     lists:foldl(fun(F, Acc) ->
-                    string:join([Acc, atom_to_list(F)], " ")
+                    case lists:member(F, ?PRIVATE_INTERFACE) of
+                        true -> Acc;
+                        false -> string:join([Acc, atom_to_list(F)], " ")
+                    end
                 end, Mod, UExports).
