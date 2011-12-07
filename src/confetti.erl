@@ -97,7 +97,7 @@ fetch(ProviderName) ->
     end.
 
 %% @doc
-%% Starts the server, and pg2 pool if needed.
+%% Starts the server, and pg2 group if needed.
 %% This function is called by confetti_sup module and
 %% there is probably no need to call it directly.
 
@@ -155,10 +155,10 @@ handle_call({fetch_config}, _From, State) ->
 
 %% @private
 %% @doc
-%% Join subscribers pool if not there already.
+%% Join subscribers group if not there already.
 
 handle_call({subscribe, ProviderName}, {Pid, _}, State) ->
-    ok = join_pool(ProviderName, Pid),
+    ok = join_group(ProviderName, Pid),
     {reply, ok, State};
 
 handle_call(_Request, _From, State) ->
@@ -186,17 +186,17 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 %% don't know why pg2:join doesn't do it by default
-join_pool(Pool, Pid) ->
-    case lists:member(Pid, pg2:get_local_members(Pool)) of
+join_group(Group, Pid) ->
+    case lists:member(Pid, pg2:get_local_members(Group)) of
         true -> ok;
         false ->
-            pg2:join(Pool, Pid)
+            pg2:join(Group, Pid)
     end.
 
-notify_subscribers(Pool, Msg) ->
+notify_subscribers(Group, Msg) ->
     lists:foreach(fun(Pid) ->
                 Pid ! Msg
-        end, pg2:get_local_members(Pool)),
+        end, pg2:get_local_members(Group)),
     ok.
 
 is_provider(ProviderName) ->
