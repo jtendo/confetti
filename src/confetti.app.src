@@ -3,9 +3,17 @@
   {description, ""},
   {vsn, "1"},
   {registered, [
+    confetti_sup_sup,
+    confetti_sup,
     confetti,
+    confetti_mgmt_sup,
     confetti_mgmt,
-    confetti_table_man
+    confetti_mgmt_cmds,
+    confetti_table_man_sup,
+    confetti_table_man,
+    confetti_utils,
+    confetti_writer,
+    confetti_reader
     ]},
   {applications, [
                   kernel,
