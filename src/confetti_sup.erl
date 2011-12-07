@@ -22,7 +22,6 @@ init(_Args) ->
           transient, 1000, worker, [confetti]}
          ]}}.
 
-
 start_child(ProviderName, Options) ->
     case supervisor:start_child(?MODULE, [ProviderName, Options]) of
         {ok, Pid} -> {ok, Pid};

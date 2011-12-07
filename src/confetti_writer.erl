@@ -36,5 +36,3 @@ dump({_,D} = Location, OutConf) ->
         ok -> {ok, Fname};
         {error, Reason} -> {error, Reason}
     end.
-
-

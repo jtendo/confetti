@@ -35,7 +35,6 @@
 
 -spec use(ProviderName :: atom()) -> {ok, Pid :: pid()}.
 
-
 %% @doc
 %% Obtains configuration provider process with default settings.
 %% Reads configuration terms from "conf/ProviderName.conf".
@@ -108,7 +107,6 @@ start_link(ProviderName, Opts) when is_atom(ProviderName) ->
 %%%===================================================================
 %%% Gen Server Callbacks
 %%%===================================================================
-
 
 %% @doc
 %% Tries to load configuration for given provider.
