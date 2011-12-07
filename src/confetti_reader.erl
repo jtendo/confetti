@@ -20,8 +20,6 @@ load_config({ProviderName, Opts}) ->
         {ok, RawConfig} ->
             case confetti_utils:u_consult(File) of
                 {ok, Terms} ->
-
-
                     case proplists:get_value(validators, Opts, undefined) of
                         undefined ->
                             load_valid_config(ProviderName, Opts, RawConfig,
@@ -35,7 +33,6 @@ load_config({ProviderName, Opts}) ->
                                     Err
                             end
                     end;
-
                 {error, Reason} ->
                     confetti_utils:raise_alarm(ProviderName, Reason),
                     handle_error({File, Reason})
@@ -74,7 +71,6 @@ last_working_config(ProviderName) ->
 %%%===================================================================
 %%% Helpers
 %%%===================================================================
-
 
 handle_error(Error = {File, enoent}) ->
     io:format("Failed to load ~s - no such file.~n", [File]),
