@@ -15,7 +15,7 @@ you for this:
     * Easily extensible with your own management commands (plugins!)
     * (TODO) broadcast working configuration across the Erlang cluster
 
-       ![Confetti management console](http://mtod.org/assets/28/0tghkrg79c4g8.png)
+           ![Confetti management console](http://mtod.org/assets/c3/w92p4radk4wg8.png)
 
 2. Configuration supervision:
 
@@ -36,12 +36,14 @@ you for this:
     ```erlang
     %% your process
     %% (...)
-    confetti:use(my_foo),   %% reads configuration terms
-                            %% from "conf/my_foo.conf",
-                            %% spawns new configuration provider
-                            %% if needed...
+    init([]) ->
+        confetti:use(my_foo),   %% reads configuration terms
+                                %% from "conf/my_foo.conf",
+                                %% spawns new configuration provider
+                                %% if needed...
 
-    confetti:fetch(my_foo)  %% fetches the configuration terms
+        confetti:fetch(my_foo),  %% fetches the configuration terms
+        {ok, #state{}}.
 
     %% (...)
     %% react to configuration changes
@@ -52,81 +54,77 @@ you for this:
 
     * Write configuration validators and more:
 
-    ```erlang
-    confetti:use(foo, [
-        %% Specify config file location
-        {location, {"conf/bar", "foo.cnf"},
+        ```erlang
+        confetti:use(foo, [
+            %% Specify config file location
+            {location, {"conf/bar", "foo.cnf"},
 
-        %% Make sure it's more than just correct Erlang term
-        %% or even transform the terms into something!
-        %% Validator funs should accept Config and return {ok, NewConf}
-        %% on success, error otherwise.
-        {validators, [fun validate_foo_config/1]},
+            %% Make sure it's more than just correct Erlang term
+            %% or even transform the terms into something!
+            %% Validator funs should accept Config and return {ok, NewConf}
+            %% on success, error otherwise.
+            {validators, [fun validate_foo_config/1]},
 
-        %% ignore notifications for current process
-        {subscribe, false}
-    ]).
-    ```
+            %% ignore notifications for current process
+            {subscribe, false}
+        ]).
+        ```
 
-    * Expose any module via the management console
+    * Expose any module via the management console:
 
-            `myapp/src/my_commands.erl`:
+        ```erlang
+        -module(my_commands).
+        export([foo/1, foo/3]).
 
-            ```erlang
-            -module(my_commands).
-            export([foo/1, foo/3]).
-
-            foo(help) ->
-                "Foo does bar two times!".
-            foo(Param1, Param2, Param3) ->
-                %% perform command logic
-                "bar bar".
-            ```
+        foo(help) ->
+            "Foo does bar two times!".
+        foo(Param1, Param2, Param3) ->
+            %% perform command logic
+            "bar bar".
+        ```
 
         Let confetti know about it:
 
-            `conf/mgmt_conf.conf`:
-
-            ```erlang
-
-            {port, 50000}.
-            {plugins, [my_commands]}.
-            ```
+        ```erlang
+        %% conf/mgmt_conf.conf
+        {port, 50000}.
+        {plugins, [my_commands]}.
+        ```
 
         Assuming your application is already running,
         perform live management configruation reload:
 
-            ```
-            $ telnet localhost 50000
+        ```
+        $ telnet localhost 50000
 
-            ...
+        ...
 
-            (nonode@nohost)> reload mgmt_conf
-            ok
-            ```
+        (nonode@nohost)> reload mgmt_conf
+        ok
+        ```
 
     * Provide your own welcome screen to the management console, i.e.:
 
-    ```
-    $ figlet MyApp > priv/helo.txt
-    ```
+        ```
+        $ figlet MyApp > priv/helo.txt
+        ```
 
-Try it out:
------------
+Try it out quickly
+------------------
 
-    1. Add dependency to your rebar.conf
-    2. `rebar get-deps && \
-        rebar compile; erl -pa myaap/ebin -pa deps/**/ebin -s confetti_app`
-    3. `telnet localhost 50000`
-    4. Type `help` for available commands, and `help COMMAND` for command usage
-       details.
+1. Obtain the source code
+2. `rebar compile; erl -pa ebin -s confetti_app`
+3. `1> example_srv:start_link().`
+3. `telnet localhost 50000`
+4. Type `help` for available commands, and `help COMMAND` for command usage
+   details.
 
 
 License
 -------
 
 BSD License.
-See LICENSE file for details.
+See `LICENSE` file for details.
 
 
 Authors
@@ -137,5 +135,8 @@ Adam Rutkowski `<adam.rutkowski@jtendo.com>`
 Contribute!
 -----------
 Feel encouraged to spot bugs/poor code and implement new sexy features.
-Also, remember to add yourself to the ``-authors`` where appropriate!
+
+Also, make sure, you add yourself to the ``authors`` where appropriate!
 Thanks.
+
+
