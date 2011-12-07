@@ -22,12 +22,13 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(CACHE, "conf_cache.db").
 
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 init([]) ->
-    dets:open_file(?SERVER, [{type, set}]).
+    dets:open_file(?CACHE, [{type, set}]).
 
 store(Data) ->
     gen_server:call(?SERVER, {store, Data}).
@@ -36,11 +37,11 @@ lookup(Key) ->
     gen_server:call(?SERVER, {lookup, Key}).
 
 handle_call({store, Data}, _From, State) ->
-    Reply = dets:insert(?SERVER, Data),
+    Reply = dets:insert(?CACHE, Data),
     {reply, Reply, State};
 
 handle_call({lookup, Key}, _From, State) ->
-    Reply = dets:lookup(?SERVER, Key),
+    Reply = dets:lookup(?CACHE, Key),
     {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
