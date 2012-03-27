@@ -118,7 +118,9 @@ fetch(ProviderName) ->
 %% use/2. User should manually overwrite cache if config was reloaded.
 
 fetch_cache(ProviderName) ->
-    confetti_cache:write(fetch(ProviderName)).
+    [Cfg] = fetch(ProviderName),
+    confetti_cache:write(Cfg),
+    [Cfg].
 
 %% @doc
 %% Starts the server, and pg2 group if needed.
@@ -234,9 +236,11 @@ not_provider(ProviderName) ->
     throw({unknown_provider, ProviderName}).
 
 proplist_validator(Cfg) ->
-    case confetti_utils:ensure_proplist(Cfg) of
+    case (is_list(Cfg)
+          andalso length(Cfg) == 1
+          andalso confetti_utils:ensure_proplist(hd(Cfg))) of
         true -> ok;
-        false -> throw("config should consist only "
-                       "from '{Key, Value}.' tuples")
+        false -> throw("config should be in the form of "
+                       "[{K1, V1}, {K2, V2}].")
     end,
     {ok, Cfg}.

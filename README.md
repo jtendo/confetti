@@ -113,12 +113,12 @@ you for this:
 5. Provides some helpers to deal with configuration:
 
     * pass {only_kv, true} among other options to confetti:use/2 - this will
-    ensure that your config is formatted as follows:
+    ensure that your config is a proplist:
 
         ```
-        {foo_key, "FOO_Value"}.
-        {bar_key, [{"BAR", value}]}.
-        {{more, complex, key}, "and simple value"}.
+        [{foo_key, "FOO_Value"},
+         {bar_key, [{"BAR", value}]},
+         {{more, complex, key}, "and simple value"}].
         ```
 
     * use confetti:fetch_cache/1 instead of confetti:fetch/1
