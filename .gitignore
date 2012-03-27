@@ -3,3 +3,5 @@ deps
 priv
 *.o
 *.beam
+conf_cache.db
+ebin/
