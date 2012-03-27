@@ -7,7 +7,7 @@
 %%%-------------------------------------------------------------------
 -module(confetti_utils).
 -author('adam.rutkowski@jtendo.com').
--export([u_consult/1, fname/1, fname/2]).
+-export([u_consult/1, fname/1, fname/2, ensure_proplist/1]).
 -export([raise_alarm/2, clear_alarm/1]).
 -include("confetti.hrl").
 
@@ -38,6 +38,17 @@ u_consult(File) ->
         Error ->
             Error
     end.
+
+%% names speaks for itself
+ensure_proplist([]) -> true;
+ensure_proplist([Term|Terms]) ->
+    case Term of
+        {_K, _V} -> ensure_proplist(Terms);
+        _ -> false
+    end;
+ensure_proplist(_) -> false.
+
+
 
 %%%===================================================================
 %%% API (alarms)
