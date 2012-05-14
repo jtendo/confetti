@@ -19,8 +19,12 @@ start_link() ->
     {ok, Pid}.
 
 init([]) ->
+    MgmtConf = case application:get_env(confetti, mgmt_config_location) of
+        {ok, NewMgmtConf} -> NewMgmtConf;
+        _ -> {"mgmt_conf.conf", "conf"}
+    end,
     confetti:use(mgmt_conf, [
-            {location, {"mgmt_conf.conf", "conf"}},
+            {location, MgmtConf},
             {subscribe, false}
         ]),
     Port = ?FETCH(mgmt_conf, port, 50000),
