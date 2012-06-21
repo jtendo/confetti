@@ -24,9 +24,10 @@ init([]) ->
             {subscribe, false}
         ]),
     Port = ?FETCH(mgmt_conf, port, 50000),
-    Ip = ?FETCH(mgmt_conf, ip, "127.0.0.1"),
+    IpS = ?FETCH(mgmt_conf, ip, "127.0.0.1"),
+    {ok, Ip} = inet_parse:ipv4_address(IpS),
     {ok, ListenSocket} = gen_tcp:listen(Port, [{active,once},
-                                               {reuseaddr, true}, {ip, inet_parse:ntoa(Ip)}]),
+                                               {reuseaddr, true}, {ip, Ip}]),
     {ok, {{simple_one_for_one, 60, 3600},
          [{socket,
           {confetti_mgmt, start_link, [ListenSocket]},
