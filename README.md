@@ -8,106 +8,105 @@ Basically it's `application:get_env/2` on steroids.
 Features
 --------
 
-1. Management console (accessible via telnet) - maintenance department **will** love
-you for this:
+### Management console
 
-    * Configuration reload in runtime (designated processes receive notifications on reload)
-    * Easily extensible with your own management commands (plugins!)
-    * (TODO) broadcast working configuration across the Erlang cluster
+* Accessible via telnet - maintenance department **will** love you for this
+* Configuration reload in runtime (designated processes receive notifications on reload)
+* Easily extensible with your own management commands (plugins!)
+* (TODO) broadcast working configuration across the Erlang cluster
 
-           ![Confetti management console](http://mtod.org/assets/c3/w92p4radk4wg8.png)
+![Confetti management console](http://mtod.org/assets/c3/w92p4radk4wg8.png)
 
-2. Configuration supervision:
+### Configuration supervision
 
-   * Increase your system's uptime - previous working configuration is
-     DETS-cached in case someone messes up the configuration files
-   * Broken config for ``process_a`` can not break ``process_b``
+* Increase your system's uptime - previous working configuration is
+  DETS-cached in case someone messes up the configuration files
+* Broken config for ``process_a`` can not break ``process_b``
 
-       ![Confetti supervision tree](http://mtod.org/assets/83/n4jtwvai8s4ck.png)
+![Confetti supervision tree](http://mtod.org/assets/83/n4jtwvai8s4ck.png)
 
-3. Easy to use
+### Easy to use
 
-    ```erlang
-    application:start(confetti).
-    ```
+```erlang
+application:start(confetti).
+```
+then
 
-    then
+```erlang
+%% your process
+%% (...)
+init([]) ->
+    confetti:use(my_foo),   %% reads configuration terms
+                            %% from "conf/my_foo.conf",
+                            %% spawns new configuration provider
+                            %% if needed...
 
-    ```erlang
-    %% your process
-    %% (...)
-    init([]) ->
-        confetti:use(my_foo),   %% reads configuration terms
-                                %% from "conf/my_foo.conf",
-                                %% spawns new configuration provider
-                                %% if needed...
+    confetti:fetch(my_foo),  %% fetches the configuration terms
+    {ok, #state{}}.
 
-        confetti:fetch(my_foo),  %% fetches the configuration terms
-        {ok, #state{}}.
+%% (...)
+%% react to configuration changes
+handle_info({config_reloaded, NewConf}, State) -> (...)
+```
 
-    %% (...)
-    %% react to configuration changes
-    handle_info({config_reloaded, NewConf}, State) -> (...)
-    ```
+### Customizable
 
-4. Customizable
+* Write configuration validators and more:
 
-    * Write configuration validators and more:
+```erlang
+confetti:use(foo, [
+    %% Specify config file location
+    {location, {"conf/bar", "foo.cnf"},
 
-        ```erlang
-        confetti:use(foo, [
-            %% Specify config file location
-            {location, {"conf/bar", "foo.cnf"},
+    %% Make sure it's more than just correct Erlang term
+    %% or even transform the terms into something!
+    %% Validator funs should accept Config and return {ok, NewConf}
+    %% on success, error otherwise.
+    {validators, [fun validate_foo_config/1]},
 
-            %% Make sure it's more than just correct Erlang term
-            %% or even transform the terms into something!
-            %% Validator funs should accept Config and return {ok, NewConf}
-            %% on success, error otherwise.
-            {validators, [fun validate_foo_config/1]},
+    %% ignore notifications for current process
+    {subscribe, false}
+]).
+```
 
-            %% ignore notifications for current process
-            {subscribe, false}
-        ]).
-        ```
+* Expose any module via the management console:
 
-    * Expose any module via the management console:
+```erlang
+-module(my_commands).
+export([foo/1, foo/3]).
 
-        ```erlang
-        -module(my_commands).
-        export([foo/1, foo/3]).
+foo(help) ->
+    "Foo does bar two times!".
+foo(Param1, Param2, Param3) ->
+    %% perform command logic
+    "bar bar".
+```
 
-        foo(help) ->
-            "Foo does bar two times!".
-        foo(Param1, Param2, Param3) ->
-            %% perform command logic
-            "bar bar".
-        ```
+Let confetti know about it:
 
-        Let confetti know about it:
+```erlang
+%% conf/mgmt_conf.conf
+{port, 50000}.
+{plugins, [my_commands]}.
+```
 
-        ```erlang
-        %% conf/mgmt_conf.conf
-        {port, 50000}.
-        {plugins, [my_commands]}.
-        ```
+Assuming your application is already running,
+perform live management configruation reload:
 
-        Assuming your application is already running,
-        perform live management configruation reload:
+```
+$ telnet localhost 50000
 
-        ```
-        $ telnet localhost 50000
+...
 
-        ...
+(nonode@nohost)> reload mgmt_conf
+ok
+```
 
-        (nonode@nohost)> reload mgmt_conf
-        ok
-        ```
+* Provide your own welcome screen to the management console, i.e.:
 
-    * Provide your own welcome screen to the management console, i.e.:
-
-        ```
-        $ figlet MyApp > priv/helo.txt
-        ```
+```
+$ figlet MyApp > priv/helo.txt
+```
 
 Try it out quickly
 ------------------
