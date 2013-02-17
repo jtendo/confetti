@@ -112,7 +112,7 @@ Try it out quickly
 ------------------
 
 1. Obtain the source code
-2. `rebar compile; erl -pa ebin -s confetti_app`
+2. `rebar compile; erl -pa ebin -boot start_sasl -s confetti_app`
 3. `1> example_srv:start_link().`
 3. `telnet localhost 50000`
 4. Type `help` for available commands, and `help COMMAND` for command usage
