@@ -156,7 +156,7 @@ all_cmd_modules() ->
     [confetti_mgmt_cmnds|?FETCH(mgmt_conf, plugins, [])].
 
 get_plugin_help(Module) ->
-    [{exports, Exports}|_] = Module:module_info(),
+    Exports = proplists:get_value(exports, Module:module_info(), []),
     UExports = proplists:get_keys(Exports),
     Mod = string:left(atom_to_list(Module), 30) ++ ":",
     lists:foldl(fun(F, Acc) ->
