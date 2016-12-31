@@ -12,7 +12,7 @@
 %% API
 -export([start_link/2]).
 -export([use/1, use/2]).
--export([fetch/1, reload/1]).
+-export([fetch/1, fetch_cache/1, reload/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -44,7 +44,8 @@ use(ProviderName) ->
     use(ProviderName,
         [{location, {atom_to_list(ProviderName) ++ ".conf", "conf"}},
          {validators, []},
-         {subscribe, true}
+         {subscribe, true},
+         {only_kv, false}
         ]).
 
 -spec use(ProviderName :: atom(), Opts :: opts()) -> {ok, Pid :: pid()}.
@@ -54,8 +55,21 @@ use(ProviderName) ->
 %% @see opts()
 
 use(ProviderName, Opts) ->
-    {ok, Pid} = confetti_sup:start_child(ProviderName, Opts),
-    Subscribe = proplists:get_value(subscribe, Opts, true),
+    %% if only_kv is set to true in Opts, we should validate that config
+    %% is actually a proplist.
+    Validators = case lists:keyfind(validators, 1, Opts) of
+                     {validators, X} when is_list(X) -> X;
+                     false -> []
+                 end,
+    FullOpts = case lists:keyfind(only_kv, 1, Opts) of
+                   {only_kv, true} ->
+                       NewValidators = [fun proplist_validator/1|Validators],
+                       lists:keymerge(1, [{validators, NewValidators}], Opts);
+                   _ -> Opts
+               end,
+
+    {ok, Pid} = confetti_sup:start_child(ProviderName, FullOpts),
+    Subscribe = proplists:get_value(subscribe, FullOpts, true),
     case Subscribe of
         false ->
             {ok, Pid};
@@ -94,6 +108,17 @@ fetch(ProviderName) ->
         true -> gen_server:call(ProviderName, {fetch_config});
         false -> not_provider(ProviderName)
     end.
+
+-spec fetch_cache(ProviderName :: atom()) -> Conf :: term().
+
+%% @doc
+%% Fetch configuration terms from given provider process and writes is
+%% to cache that can be used by functions in confetti_cache module.
+%% Should be used only when {only_kv, true} option was passed to
+%% use/2. User should manually overwrite cache if config was reloaded.
+
+fetch_cache(ProviderName) ->
+    confetti_cache:write(fetch(ProviderName)).
 
 %% @doc
 %% Starts the server, and pg2 group if needed.
@@ -207,3 +232,11 @@ is_provider(ProviderName) ->
 
 not_provider(ProviderName) ->
     throw({unknown_provider, ProviderName}).
+
+proplist_validator(Cfg) ->
+    case confetti_utils:ensure_proplist(Cfg) of
+        true -> ok;
+        false -> throw("config should consist only "
+                       "from '{Key, Value}.' tuples")
+    end,
+    {ok, Cfg}.

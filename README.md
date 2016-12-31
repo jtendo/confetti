@@ -108,6 +108,38 @@ ok
 $ figlet MyApp > priv/helo.txt
 ```
 
+
+5. Provides some helpers to deal with configuration:
+
+    * pass {only_kv, true} among other options to confetti:use/2 - this will
+    ensure that your config is formatted as follows:
+
+        ```
+        {foo_key, "FOO_Value"}.
+        {bar_key, [{"BAR", value}]}.
+        {{more, complex, key}, "and simple value"}.
+        ```
+
+    * use confetti:fetch_cache/1 instead of confetti:fetch/1
+    * enjoy fast and easy configuration variable fetching with confetti_cache:get/1
+    and confetti_cache:get_many/2:
+
+        ```
+        > confetti:fetch_cache(example).
+        [{foo,bar},
+         {baz,[{test,1},
+               {another_test,<<"FOOBARBAZ ALL GOOD GUYZ">>}]}]
+        > confetti_cache:get(foo).
+        bar
+        > confetti_cache:get_many([foo, baz, bar]).
+        [{foo,bar},
+         {baz,[{test,1},
+               {another_test,<<"FOOBARBAZ ALL GOOD GUYZ">>}]},
+         none]
+        > confetti_cache:get_many([foo, baz, bar], throw).
+        ** exception throw: {key_not_found, bar}
+        ```
+
 Try it out quickly
 ------------------
 
@@ -137,5 +169,3 @@ Feel encouraged to spot bugs/poor code and implement new sexy features.
 
 Also, make sure, you add yourself to the ``authors`` where appropriate!
 Thanks.
-
-
